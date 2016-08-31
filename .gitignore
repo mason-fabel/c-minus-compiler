@@ -2,5 +2,8 @@
 *.o
 c-
 
+# Test data
+dat/*
+
 # Vim temp files
 *.swp
