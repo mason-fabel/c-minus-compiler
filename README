@@ -1,0 +1,31 @@
+OVERVIEW
+========
+
+This project is a compiler for the C- language.
+
+
+DEPENDENCIES
+============
+
+In order to build the C- compiler, both flex and bison must be installed.
+
+
+COMPILING
+=========
+
+To build this project, use the included makefile.
+
+$ make
+
+
+RUNNING
+=======
+
+The build process will create an executable named c-. Run this to invoke the C-
+compiler
+
+
+CREDITS
+=======
+
+Written by Mason Fabel on 30 August 2016
