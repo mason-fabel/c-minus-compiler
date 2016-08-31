@@ -1,12 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "parser.tab.h"
 
-int main(int argc, char** argv) {
-	int i;
+void yyerror(const char* str) {
+	fprintf(stderr, "%s\n", str);
+}
 
-	for (i = 0; i < argc; i++) {
-		fprintf(stdout, "%i: %s\n", i, argv[i]);
-	}
+int main() {
+	yyparse();
 
 	exit(0);
 }

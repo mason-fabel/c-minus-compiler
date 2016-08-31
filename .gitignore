@@ -2,6 +2,11 @@
 *.o
 c-
 
+# Generated files
+lex.yy.c
+parser.tab.c
+parser.tab.h
+
 # Test data
 dat/*
 
