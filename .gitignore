@@ -7,8 +7,5 @@ parser.h
 parser.c
 scanner.c
 
-# Test data
-dat/*
-
 # Vim temp files
 *.swp

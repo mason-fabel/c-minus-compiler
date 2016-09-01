@@ -5,7 +5,7 @@ SRC := scanner.l parser.y
 GEN := scanner.c parser.c parser.h
 OBJ := parser.o scanner.o
 
-.PHONY : all clean
+.PHONY : all clean test
 
 $(BIN) : $(OBJ)
 	$(CC) $(CFLAGS) $(OBJ) -o $@
@@ -25,3 +25,9 @@ all :
 
 clean :
 	rm -f $(BIN) $(OBJ) $(GEN)
+
+test : all
+	./c- test/scannerTest.c- > out.txt 2>&1
+	cat test/scannerTest.out > good.txt
+	diff --text --side-by-side out.txt good.txt | less
+	rm out.txt good.txt
