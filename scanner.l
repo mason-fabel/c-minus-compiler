@@ -1,6 +1,6 @@
 %{
 #include <stdio.h>
-#include "parser.tab.h"
+#include "parser.h"
 
 extern void yyerror(const char*);
 %}

@@ -1,25 +1,27 @@
 CC := gcc
 CFLAGS := -Wall -Wextra -Wpedantic -O2
-PROG := c-
-SRC := main.c parser.tab.c lex.yy.c
-GEN := lex.yy.c parser.tab.h parser.tab.c
-OBJ := main.o parser.tab.o lex.yy.o
+BIN := c-
+SRC := scanner.l parser.y
+GEN := scanner.c parser.c parser.h
+OBJ := parser.o scanner.o
 
-.PHONY : clean rebuild
+.PHONY : all clean
 
-$(PROG) : $(GEN) $(OBJ)
+$(BIN) : $(OBJ)
 	$(CC) $(CFLAGS) $(OBJ) -o $@
 
-$(GEN) : parser.y scanner.l
-	bison -d parser.y
-	flex scanner.l
+scanner.c : scanner.l parser.h
+	flex --outfile=scanner.c scanner.l
+
+parser.c parser.h : parser.y
+	bison --defines=parser.h --output=parser.c parser.y
 
 %.o : $.c
 	$(CC) $(CFLAGS) -c $<
 
-clean :
-	rm -f $(PROG) $(OBJ) $(GEN)
+all :
+	touch $(SRC)
+	make $(BIN)
 
-rebuild :
-	make clean
-	make $(PROG)
+clean :
+	rm -f $(BIN) $(OBJ) $(GEN)

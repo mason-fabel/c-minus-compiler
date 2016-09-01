@@ -1,6 +1,10 @@
 %{
+#include <stdio.h>
+#include <stdlib.h>
+
 extern int yylex(void);
-extern void yyerror(const char*);
+
+void yyerror(const char* msg);
 %}
 
 %token A
@@ -15,3 +19,14 @@ extern void yyerror(const char*);
 expr : expr expr | A | B | /* empty */;
 
 %%
+
+
+void yyerror(const char* msg) {
+	fprintf(stderr, "bison error: %s\n", msg);
+}
+
+int main() {
+	yyparse();
+
+	exit(0);
+}
