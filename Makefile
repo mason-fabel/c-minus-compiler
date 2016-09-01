@@ -10,10 +10,10 @@ OBJ := parser.o scanner.o
 $(BIN) : $(OBJ)
 	$(CC) $(CFLAGS) $(OBJ) -o $@
 
-scanner.c : scanner.l parser.h
+scanner.c : scanner.l parser.h token.h
 	flex --outfile=scanner.c scanner.l
 
-parser.c parser.h : parser.y
+parser.c parser.h : parser.y token.h
 	bison --defines=parser.h --output=parser.c parser.y
 
 %.o : $.c
@@ -26,8 +26,8 @@ all :
 clean :
 	rm -f $(BIN) $(OBJ) $(GEN)
 
-test : all
-	./c- test/scannerTest.c- > out.txt 2>&1
+test : $(BIN)
+	./c- test/scannerTest.c- > out.txt
 	cat test/scannerTest.out > good.txt
 	diff --text --side-by-side out.txt good.txt | less
 	rm out.txt good.txt
