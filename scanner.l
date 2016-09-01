@@ -3,6 +3,8 @@
 #include "parser.h"
 
 extern void yyerror(const char*);
+
+void scanner_use_file(char* fname);
 %}
 
 %option noyywrap
@@ -22,3 +24,15 @@ extern void yyerror(const char*);
 }
 
 %%
+
+void scanner_use_file(char* fname) {
+	FILE* fin;
+
+	fin = fopen(fname, "r");
+	if (fin == NULL) {
+		fprintf(stderr, "unable to open file: %s\n", fname);
+		exit(1);
+	}
+
+	yy_switch_to_buffer(yy_create_buffer(fin, YY_BUF_SIZE));
+}
