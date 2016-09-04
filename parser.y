@@ -7,16 +7,19 @@ extern void scanner_use_file(char*);
 extern int yylex(void);
 
 void yyerror(const char* msg);
+void print_token(token_t* tok);
+const char* token_name(int token_class);
 %}
 
 %union {
-	token_t token;
+	token_t* token;
 }
 
 %token ADDASS AND BOOL BOOLCONST BREAK CHAR CHARCONST DEC DIVASS ELSE EQ GRTEQ ID IF INC INT LESSEQ MULASS NOT NOTEQ NUMCONST OR RECORD RETURN STATIC SUBASS WHILE
 
 %type<token> ADDASS AND BOOL BOOLCONST BREAK CHAR CHARCONST DEC DIVASS ELSE EQ GRTEQ ID IF INC INT LESSEQ MULASS NOT NOTEQ NUMCONST OR RECORD RETURN STATIC SUBASS WHILE
 
+%token_table
 
 
 %start token_list
@@ -29,64 +32,45 @@ token_list
 	;
 
 token
-	: AND {
-		fprintf(stdout, "Line %i Token: AND\n", $1.lineno);
-	}
-	| BOOL {
-		fprintf(stdout, "Line %i Token: BOOL\n", $1.lineno);
-	}
-	| BOOLCONST {
-		fprintf(stdout, "Line %i Token: BOOLCONST Value: %i  Input: %s\n",
-			$1.lineno, $1.value.int_val, $1.input);
-	}
-	| BREAK {
-		fprintf(stdout, "Line %i Token: BREAK\n", $1.lineno);
-	}
-	| CHAR {
-		fprintf(stdout, "Line %i Token: CHAR\n", $1.lineno);
-	}
-	| CHARCONST {
-		fprintf(stdout, "Line %i Token: CHARCONST Value: %c Input: %s\n",
-			$1.lineno, $1.value.char_val, $1.input);
-	}
-	| ELSE {
-		fprintf(stdout, "Line %i Token: ELSE\n", $1.lineno);
-	}
-	| ID {
-		fprintf(stdout, "Line %i Token: ID Value: %s\n",
-			$1.lineno, $1.value.str_val);
-	}
-	| INT {
-		fprintf(stdout, "Line %i Token: INT\n", $1.lineno);
-	}
-	| NOT {
-		fprintf(stdout, "Line %i Token: NOT\n", $1.lineno);
-	}
-	| NUMCONST {
-		fprintf(stdout, "Line %i Token: NUMCONST Value: %i  Input: %s\n",
-			$1.lineno, $1.value.int_val, $1.input);
-	}
-	| OR {
-		fprintf(stdout, "Line %i Token: OR\n", $1.lineno);
-	}
-	| RECORD {
-		fprintf(stdout, "Line %i Token: RECORD\n", $1.lineno);
-	}
-	| RETURN {
-		fprintf(stdout, "Line %i Token: RETURN\n", $1.lineno);
-	}
-	| STATIC {
-		fprintf(stdout, "Line %i Token: STATIC\n", $1.lineno);
-	}
-	| WHILE {
-		fprintf(stdout, "Line %i Token: WHILE\n", $1.lineno);
-	}
+	: BOOLCONST	{ print_token($1); }
+	| CHARCONST	{ print_token($1); }
+	| ID		{ print_token($1); }
+	| NUMCONST	{ print_token($1); }
 	;
 
 %%
 
 void yyerror(const char* msg) {
 	fprintf(stdout, "parser error: %s\n", msg);
+}
+
+void print_token(token_t* tok) {
+	fprintf(stdout, "Line %i Token: %s", tok->lineno, token_name(tok->type));
+
+	switch (tok->value_mode) {
+		case MODE_INT:
+			fprintf(stdout, " Value: %i", tok->value.int_val);
+			break;
+		case MODE_CHAR:
+			fprintf(stdout, " Value: \'%c\'", tok->value.char_val);
+			break;
+		case MODE_STR:
+			fprintf(stdout, " Value: %s", tok->value.str_val);
+			break;
+	}
+
+	fprintf(stdout, " Input: %s", tok->input);
+	fprintf(stdout, "\n");
+
+	return;
+}
+
+const char* token_name(int token_class) {
+	/* NOTE: We first undo an offset of 258 introduced by the flex token class
+	 * numbering, and then add 3 as bison puts 3 tokens ("$end", "error", and
+	 * "$undefined") at the begining of the toke name table.
+	 */
+	return yytname[token_class - 258 + 3];
 }
 
 int main(int argc, char** argv) {

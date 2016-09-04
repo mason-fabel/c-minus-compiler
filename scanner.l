@@ -6,6 +6,7 @@
 
 void scanner_error(void);
 void scanner_use_file(char* fname);
+int create_token(int token_class);
 %}
 
 %option yylineno
@@ -13,135 +14,25 @@ void scanner_use_file(char* fname);
 
 %%
 
-and {
-	yylval.token.lineno = yylineno;
-	yylval.token.input = strdup(yytext);
-
-	return AND;
-}
-
-bool {
-	yylval.token.lineno = yylineno;
-	yylval.token.input = strdup(yytext);
-
-	return BOOL;
-}
-
-break {
-	yylval.token.lineno = yylineno;
-	yylval.token.input = strdup(yytext);
-
-	return BREAK;
-}
-
-char {
-	yylval.token.lineno = yylineno;
-	yylval.token.input = strdup(yytext);
-
-	return CHAR;
-}
-
-else {
-	yylval.token.lineno = yylineno;
-	yylval.token.input = strdup(yytext);
-
-	return ELSE;
-}
-
-int {
-	yylval.token.lineno = yylineno;
-	yylval.token.input = strdup(yytext);
-
-	return INT;
-}
-
-not {
-	yylval.token.lineno = yylineno;
-	yylval.token.input = strdup(yytext);
-
-	return NOT;
-}
-
-or {
-	yylval.token.lineno = yylineno;
-	yylval.token.input = strdup(yytext);
-
-	return OR;
-}
-
-record {
-	yylval.token.lineno = yylineno;
-	yylval.token.input = strdup(yytext);
-
-	return RECORD;
-}
-
-return {
-	yylval.token.lineno = yylineno;
-	yylval.token.input = strdup(yytext);
-
-	return RETURN;
-}
-
-static {
-	yylval.token.lineno = yylineno;
-	yylval.token.input = strdup(yytext);
-
-	return STATIC;
-}
-
-while {
-	yylval.token.lineno = yylineno;
-	yylval.token.input = strdup(yytext);
-
-	return WHILE;
-}
-
-true {
-	yylval.token.lineno = yylineno;
-	yylval.token.input = strdup(yytext);
-	yylval.token.value.int_val = 1;
-
-	return BOOLCONST;
-}
-
-false {
-	yylval.token.lineno = yylineno;
-	yylval.token.input = strdup(yytext);
-	yylval.token.value.int_val = 0;
-
-	return BOOLCONST;
-}
-
-[a-zA-Z][a-zA-Z0-9]* {
-	yylval.token.lineno = yylineno;
-	yylval.token.input = strdup(yytext);
-	yylval.token.value.str_val = strdup(yytext);
-
-	return ID;
-}
-
-'\.' {
-	yylval.token.lineno = yylineno;
-	yylval.token.input = strdup(yytext);
-	yylval.token.value.char_val = yytext[1];
-
-	return CHARCONST;
-}
-
-[0-9]+ {
-	yylval.token.lineno = yylineno;
-	yylval.token.input = strdup(yytext);
-	yylval.token.value.int_val = atoi(yytext);
-
-	return NUMCONST;
-}
-
-[ \t\n]+ { /* whitespace - do nothing */ }
-
-\/\/.* { /* comment - do nothing */ }
-
-. { scanner_error(); }
+and						{ return create_token(AND); }
+bool					{ return create_token(BOOL); }
+break					{ return create_token(BREAK); }
+char					{ return create_token(CHAR); }
+else					{ return create_token(ELSE); }
+int						{ return create_token(INT); }
+not						{ return create_token(NOT); }
+or						{ return create_token(OR); }
+record					{ return create_token(RECORD); }
+return					{ return create_token(RETURN); }
+static					{ return create_token(STATIC); }
+while					{ return create_token(WHILE); }
+true|false				{ return create_token(BOOLCONST); }
+[a-zA-Z][a-zA-Z0-9]*	{ return create_token(ID); }
+\'\\?.'					{ return create_token(CHARCONST); }
+[0-9]+					{ return create_token(NUMCONST); }
+[ \t\n]+				{ /* whitespace - do nothing */ }
+\/\/.*					{ /* comment - do nothing */ }
+.						{ scanner_error(); }
 
 %%
 
@@ -160,4 +51,55 @@ void scanner_use_file(char* fname) {
 	}
 
 	yy_switch_to_buffer(yy_create_buffer(fin, YY_BUF_SIZE));
+}
+
+int create_token(int token_class) {
+	yylval.token = malloc(sizeof(token_t));
+
+	if (yylval.token == NULL) {
+		fprintf(stderr,
+			"ERROR(%i): Unable to allocate memory for token: \"%s\"\n",
+			yylineno, yytext);
+	}
+
+	yylval.token->type = token_class;
+	yylval.token->lineno = yylineno;
+	yylval.token->input = strdup(yytext);
+
+	switch (token_class) {
+		case CHARCONST:
+			yylval.token->value_mode = MODE_CHAR;
+			if (strlen(yytext) == 3) {
+				/* no escape sequence */
+				yylval.token->value.char_val = yytext[1];
+			} else {
+				/* escape sequence */
+				switch (yytext[2]) {
+					case '0':
+						yylval.token->value.char_val = '\0';
+						break;
+					case 'n':
+						yylval.token->value.char_val = '\n';
+						break;
+					default:
+						yylval.token->value.char_val = yytext[2];
+				}
+			}
+			break;
+
+		case ID:
+			yylval.token->value_mode = MODE_STR;
+			yylval.token->value.str_val = strdup(yytext);
+			break;
+
+		case NUMCONST:
+			yylval.token->value_mode = MODE_INT;
+			yylval.token->value.int_val = atoi(yytext);
+			break;
+
+		default:
+			yylval.token->value_mode = MODE_NONE;
+	}
+
+	return token_class;
 }
