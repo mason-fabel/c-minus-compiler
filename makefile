@@ -1,5 +1,5 @@
 CC := gcc
-CFLAGS := -Wall -Wextra -Wpedantic -O2
+CFLAGS := -Wall -Wextra -O2
 BIN := c-
 SRC := scanner.l parser.y
 GEN := scanner.c parser.c parser.h
@@ -31,3 +31,6 @@ test : $(BIN)
 	cat test/scannerTest.out > good.txt
 	diff --text --side-by-side out.txt good.txt | less
 	rm out.txt good.txt
+
+tar : 
+	tar -cf fabe0940.tar README makefile scanner.l parser.y token.h

@@ -6,6 +6,7 @@ c-
 parser.h
 parser.c
 scanner.c
+fabe0940.tar
 
 # Vim temp files
 *.swp
