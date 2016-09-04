@@ -7,6 +7,8 @@ extern void scanner_use_file(char*);
 extern int yylex(void);
 
 void yyerror(const char* msg);
+void print_value(token_t* tok);
+void print_input(token_t* tok);
 void print_token(token_t* tok);
 const char* token_name(int token_class);
 %}
@@ -19,7 +21,7 @@ const char* token_name(int token_class);
 
 %type<token> ADDASS AND BOOL BOOLCONST BREAK CHAR CHARCONST DEC DIVASS ELSE EQ GRTEQ ID IF INC INT LESSEQ MULASS NOT NOTEQ NUMCONST OR RECORD RETURN STATIC SUBASS WHILE
 
-%token_table
+%token-table
 
 
 %start token_list
@@ -42,12 +44,14 @@ token
 
 void yyerror(const char* msg) {
 	fprintf(stdout, "parser error: %s\n", msg);
+
+	return;
 }
 
-void print_token(token_t* tok) {
-	fprintf(stdout, "Line %i Token: %s", tok->lineno, token_name(tok->type));
-
+void print_value(token_t* tok) {
 	switch (tok->value_mode) {
+		case MODE_NONE:
+			break;
 		case MODE_INT:
 			fprintf(stdout, " Value: %i", tok->value.int_val);
 			break;
@@ -59,7 +63,33 @@ void print_token(token_t* tok) {
 			break;
 	}
 
+	return;
+}
+
+void print_input(token_t* tok) {
 	fprintf(stdout, " Input: %s", tok->input);
+
+	return;
+}
+
+void print_token(token_t* tok) {
+	fprintf(stdout, "Line %i Token: %s", tok->lineno, token_name(tok->type));
+
+	switch (tok->type) {
+		case BOOLCONST:
+		case CHARCONST:
+		case ID:
+		case NUMCONST:
+			print_value(tok);
+	}
+
+	switch (tok->type) {
+		case BOOLCONST:
+		case CHARCONST:
+		case NUMCONST:
+			print_input(tok);
+	}
+
 	fprintf(stdout, "\n");
 
 	return;
