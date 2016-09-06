@@ -19,6 +19,7 @@ bool					{ return create_token(BOOL); }
 break					{ return create_token(BREAK); }
 char					{ return create_token(CHAR); }
 else					{ return create_token(ELSE); }
+if						{ return create_token(IF); }
 int						{ return create_token(INT); }
 not						{ return create_token(NOT); }
 or						{ return create_token(OR); }
@@ -28,8 +29,22 @@ static					{ return create_token(STATIC); }
 while					{ return create_token(WHILE); }
 true|false				{ return create_token(BOOLCONST); }
 [a-zA-Z][a-zA-Z0-9]*	{ return create_token(ID); }
-\'\\?.'					{ return create_token(CHARCONST); }
+'\\?.'					{ return create_token(CHARCONST); }
 [0-9]+					{ return create_token(NUMCONST); }
+\=\=					{ return create_token(EQ); }
+\>\=					{ return create_token(GRTEQ); }
+\<\=					{ return create_token(LESSEQ); }
+\!\=					{ return create_token(NOTEQ); }
+\-\-					{ return create_token(DEC); }
+\+\+					{ return create_token(INC); }
+\+\=					{ return create_token(ADDASS); }
+\/\=					{ return create_token(DIVASS); }
+\*\=					{ return create_token(MULASS); }
+\-\=					{ return create_token(SUBASS); }
+[\+\-\*\/\%\?]			{ return create_token((int) yytext[0]); }
+[\=\<\>]				{ return create_token((int) yytext[0]); }
+[\(\)\[\]\{\}]			{ return create_token((int) yytext[0]); }
+[\.\,\:\;]				{ return create_token((int) yytext[0]); }
 [ \t\n]+				{ /* whitespace - do nothing */ }
 \/\/.*					{ /* comment - do nothing */ }
 .						{ scanner_error(); }
@@ -67,6 +82,16 @@ int create_token(int token_class) {
 	yylval.token->input = strdup(yytext);
 
 	switch (token_class) {
+		case BOOLCONST:
+			yylval.token->value_mode = MODE_INT;
+			yylval.token->value.int_val = yytext[0] == 't' ? 1 : 0;
+			break;
+
+		case NUMCONST:
+			yylval.token->value_mode = MODE_INT;
+			yylval.token->value.int_val = atoi(yytext);
+			break;
+
 		case CHARCONST:
 			yylval.token->value_mode = MODE_CHAR;
 			if (strlen(yytext) == 3) {
@@ -90,11 +115,6 @@ int create_token(int token_class) {
 		case ID:
 			yylval.token->value_mode = MODE_STR;
 			yylval.token->value.str_val = strdup(yytext);
-			break;
-
-		case NUMCONST:
-			yylval.token->value_mode = MODE_INT;
-			yylval.token->value.int_val = atoi(yytext);
 			break;
 
 		default:

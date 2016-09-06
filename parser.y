@@ -16,10 +16,53 @@ const char* token_name(int token_class);
 %union {
 	token_t* token;
 }
+%token <token> ADDASS
+%token <token> AND
+%token <token> BOOL
+%token <token> BOOLCONST
+%token <token> BREAK
+%token <token> CHAR
+%token <token> CHARCONST
+%token <token> DEC
+%token <token> DIVASS
+%token <token> ELSE
+%token <token> EQ
+%token <token> GRTEQ
+%token <token> ID
+%token <token> IF
+%token <token> INC
+%token <token> INT
+%token <token> LESSEQ
+%token <token> MULASS
+%token <token> NOT
+%token <token> NOTEQ
+%token <token> NUMCONST
+%token <token> OR
+%token <token> RECORD
+%token <token> RETURN
+%token <token> STATIC
+%token <token> SUBASS
+%token <token> WHILE
 
-%token ADDASS AND BOOL BOOLCONST BREAK CHAR CHARCONST DEC DIVASS ELSE EQ GRTEQ ID IF INC INT LESSEQ MULASS NOT NOTEQ NUMCONST OR RECORD RETURN STATIC SUBASS WHILE
-
-%type<token> ADDASS AND BOOL BOOLCONST BREAK CHAR CHARCONST DEC DIVASS ELSE EQ GRTEQ ID IF INC INT LESSEQ MULASS NOT NOTEQ NUMCONST OR RECORD RETURN STATIC SUBASS WHILE
+%type<token> '+'
+%type<token> '-'
+%type<token> '*'
+%type<token> '/'
+%type<token> '%'
+%type<token> '?'
+%type<token> '='
+%type<token> '<'
+%type<token> '>'
+%type<token> '('
+%type<token> ')'
+%type<token> '['
+%type<token> ']'
+%type<token> '{'
+%type<token> '}'
+%type<token> '.'
+%type<token> ','
+%type<token> ':'
+%type<token> ';'
 
 %token-table
 
@@ -34,10 +77,52 @@ token_list
 	;
 
 token
-	: BOOLCONST	{ print_token($1); }
+	: '+'		{ print_token($1); }
+	| '-'		{ print_token($1); }
+	| '*'		{ print_token($1); }
+	| '/'		{ print_token($1); }
+	| '%'		{ print_token($1); }
+	| '?'		{ print_token($1); }
+	| '='		{ print_token($1); }
+	| '<'		{ print_token($1); }
+	| '>'		{ print_token($1); }
+	| '('		{ print_token($1); }
+	| ')'		{ print_token($1); }
+	| '['		{ print_token($1); }
+	| ']'		{ print_token($1); }
+	| '{'		{ print_token($1); }
+	| '}'		{ print_token($1); }
+	| '.'		{ print_token($1); }
+	| ','		{ print_token($1); }
+	| ':'		{ print_token($1); }
+	| ';'		{ print_token($1); }
+	| AND		{ print_token($1); }
+	| ADDASS	{ print_token($1); }
+	| BREAK		{ print_token($1); }
+	| BOOL		{ print_token($1); }
+	| BOOLCONST	{ print_token($1); }
+	| CHAR		{ print_token($1); }
 	| CHARCONST	{ print_token($1); }
+	| DEC		{ print_token($1); }
+	| DIVASS	{ print_token($1); }
+	| ELSE		{ print_token($1); }
+	| EQ		{ print_token($1); }
+	| GRTEQ		{ print_token($1); }
 	| ID		{ print_token($1); }
+	| IF		{ print_token($1); }
+	| INC		{ print_token($1); }
+	| INT		{ print_token($1); }
+	| LESSEQ	{ print_token($1); }
+	| MULASS	{ print_token($1); }
+	| NOT		{ print_token($1); }
+	| NOTEQ		{ print_token($1); }
 	| NUMCONST	{ print_token($1); }
+	| OR		{ print_token($1); }
+	| RECORD	{ print_token($1); }
+	| RETURN	{ print_token($1); }
+	| STATIC	{ print_token($1); }
+	| SUBASS	{ print_token($1); }
+	| WHILE		{ print_token($1); }
 	;
 
 %%
@@ -67,7 +152,7 @@ void print_value(token_t* tok) {
 }
 
 void print_input(token_t* tok) {
-	fprintf(stdout, " Input: %s", tok->input);
+	fprintf(stdout, "  Input: %s", tok->input);
 
 	return;
 }
@@ -96,11 +181,21 @@ void print_token(token_t* tok) {
 }
 
 const char* token_name(int token_class) {
-	/* NOTE: We first undo an offset of 258 introduced by the flex token class
-	 * numbering, and then add 3 as bison puts 3 tokens ("$end", "error", and
-	 * "$undefined") at the begining of the toke name table.
-	 */
-	return yytname[token_class - 258 + 3];
+	char* name;
+
+	if (token_class >= 258) {
+		/* NOTE: We first undo an offset of 258 introduced by the flex token
+		 * class numbering, and then add 3 as bison puts 3 tokens ("$end",
+		 * "error", "$undefined") at the begining of the toke name table.
+		 */
+		name = yytname[token_class - 258 + 3];
+	} else {
+		/* Implicit single-character token type */
+		name = malloc(sizeof(char) * 2);
+		snprintf(name, (size_t) 2, "%c", (char) token_class);
+	}
+
+	return name;
 }
 
 int main(int argc, char** argv) {
