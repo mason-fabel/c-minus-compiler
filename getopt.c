@@ -13,6 +13,10 @@
 #endif
 
 static int sp = 1;
+char *optarg;
+int optind = 1;
+int opterr = 1;
+int optopt;
 
 static int badopt(char* name, char* text) {
 	if (opterr) fprintf(stderr, "%s: %s -- %c\n", name, text, optopt);

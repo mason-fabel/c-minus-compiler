@@ -69,7 +69,7 @@ void scanner_use_file(char* fname) {
 }
 
 int create_token(int token_class) {
-	yylval.token = malloc(sizeof(token_t));
+	yylval.token = (token_t*) malloc(sizeof(token_t));
 
 	if (yylval.token == NULL) {
 		fprintf(stderr,

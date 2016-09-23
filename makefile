@@ -1,11 +1,10 @@
-CC := gcc
-CFLAGS := -DYYDEBUG
+CC := g++
+CFLAGS := -Wall -Wextra -Wpedantic -DYYDEBUG
 BIN := c-
-SRC := scanner.l parser.y
 GEN := scanner.c parser.c parser.h
-OBJ := parser.o scanner.o getopt.o
+OBJ := parser.o scanner.o getopt.o scope.o symbolTable.o
 
-.PHONY : all clean test
+.PHONY : clean test
 
 $(BIN) : $(OBJ)
 	$(CC) $(CFLAGS) $(OBJ) -o $@
@@ -19,9 +18,8 @@ parser.c parser.h : parser.y token.h getopt.h
 %.o : $.c
 	$(CC) $(CFLAGS) -c $<
 
-all :
-	touch $(SRC)
-	make $(BIN)
+%.o : $.cpp
+	$(CC) $(CFLAGS) -c $<
 
 clean :
 	rm -f $(BIN) $(OBJ) $(GEN)

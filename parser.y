@@ -3,11 +3,13 @@
 #include <stdlib.h>
 #include "getopt.h"
 #include "token.h"
+#include "scope.h"
 
 extern void scanner_use_file(char*);
 extern int yylex(void);
 
 extern int yydebug;
+extern int optind;
 
 void yyerror(const char* msg);
 void print_value(token_t* tok);
@@ -194,7 +196,7 @@ const char* token_name(int token_class) {
 		name = (char*) yytname[token_class - 258 + 3];
 	} else {
 		/* Implicit single-character token type */
-		name = malloc(sizeof(char) * 2);
+		name = (char*) malloc(sizeof(char) * 2);
 		snprintf(name, (size_t) 2, "%c", (char) token_class);
 	}
 
