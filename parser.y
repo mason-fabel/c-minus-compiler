@@ -1,10 +1,13 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+#include "getopt.h"
 #include "token.h"
 
 extern void scanner_use_file(char*);
 extern int yylex(void);
+
+extern int yydebug;
 
 void yyerror(const char* msg);
 void print_value(token_t* tok);
@@ -16,6 +19,7 @@ const char* token_name(int token_class);
 %union {
 	token_t* token;
 }
+
 %token <token> ADDASS
 %token <token> AND
 %token <token> BOOL
@@ -65,7 +69,6 @@ const char* token_name(int token_class);
 %type<token> ';'
 
 %token-table
-
 
 %start token_list
 
@@ -188,29 +191,45 @@ const char* token_name(int token_class) {
 		 * class numbering, and then add 3 as bison puts 3 tokens ("$end",
 		 * "error", "$undefined") at the begining of the toke name table.
 		 */
-		name = yytname[token_class - 258 + 3];
+		name = (char*) yytname[token_class - 258 + 3];
 	} else {
 		/* Implicit single-character token type */
 		name = malloc(sizeof(char) * 2);
 		snprintf(name, (size_t) 2, "%c", (char) token_class);
 	}
 
-	return name;
+	return (const char*) name;
 }
 
 int main(int argc, char** argv) {
+	char c;
 	int i;
 
-	if (argc == 1) {
-		/* read from stdin - do nothing */
-	} else if (argc == 2) {
-		/* read from the file named in the first argument */
-		scanner_use_file(argv[1]);
-	} else {
-		for (i = 2; i < argc; i++) {
-			fprintf(stderr, "%s: invalid argument: %s\n", argv[0], argv[i]);
+	while ((c = getopt(argc, argv, "d")) != -1) {
+		switch (c) {
+			case 'd':
+				yydebug = 1;
+				break;
+			case '?':
+			default:
+				fprintf(stderr, "getopt: case '%c'\n", c);
+				exit(1);
 		}
-		exit(1);
+	}
+
+	switch (argc - optind) {
+		case 1:
+			scanner_use_file(argv[optind]);
+			break;
+		case 0:
+			/* read from STDIN */
+			break;
+		default:
+			fprintf(stderr, "%s: invalid arguments:\n", argv[0]);
+			for (i = optind; i < argc; i++) {
+				fprintf(stderr, "  %i: %s\n", i, argv[i]);
+			}
+			exit(1);
 	}
 
 	yyparse();
