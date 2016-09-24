@@ -45,6 +45,7 @@ const char* token_name(int token_class);
 %token <token> NUMCONST
 %token <token> OR
 %token <token> RECORD
+%token <token> RECTYPE
 %token <token> RETURN
 %token <token> STATIC
 %token <token> SUBASS
@@ -72,63 +73,205 @@ const char* token_name(int token_class);
 
 %token-table
 
-%start token_list
+%start program
 
 %%
 
-token_list
-	: token 
-	| token_list token
-	;
+program					: declarationList
+						;
 
-token
-	: '+'		{ print_token($1); }
-	| '-'		{ print_token($1); }
-	| '*'		{ print_token($1); }
-	| '/'		{ print_token($1); }
-	| '%'		{ print_token($1); }
-	| '?'		{ print_token($1); }
-	| '='		{ print_token($1); }
-	| '<'		{ print_token($1); }
-	| '>'		{ print_token($1); }
-	| '('		{ print_token($1); }
-	| ')'		{ print_token($1); }
-	| '['		{ print_token($1); }
-	| ']'		{ print_token($1); }
-	| '{'		{ print_token($1); }
-	| '}'		{ print_token($1); }
-	| '.'		{ print_token($1); }
-	| ','		{ print_token($1); }
-	| ':'		{ print_token($1); }
-	| ';'		{ print_token($1); }
-	| AND		{ print_token($1); }
-	| ADDASS	{ print_token($1); }
-	| BREAK		{ print_token($1); }
-	| BOOL		{ print_token($1); }
-	| BOOLCONST	{ print_token($1); }
-	| CHAR		{ print_token($1); }
-	| CHARCONST	{ print_token($1); }
-	| DEC		{ print_token($1); }
-	| DIVASS	{ print_token($1); }
-	| ELSE		{ print_token($1); }
-	| EQ		{ print_token($1); }
-	| GRTEQ		{ print_token($1); }
-	| ID		{ print_token($1); }
-	| IF		{ print_token($1); }
-	| INC		{ print_token($1); }
-	| INT		{ print_token($1); }
-	| LESSEQ	{ print_token($1); }
-	| MULASS	{ print_token($1); }
-	| NOT		{ print_token($1); }
-	| NOTEQ		{ print_token($1); }
-	| NUMCONST	{ print_token($1); }
-	| OR		{ print_token($1); }
-	| RECORD	{ print_token($1); }
-	| RETURN	{ print_token($1); }
-	| STATIC	{ print_token($1); }
-	| SUBASS	{ print_token($1); }
-	| WHILE		{ print_token($1); }
-	;
+declarationList			: declarationList declaration
+						| declaration
+						;
+
+declaration				: varDeclaration
+						| funDeclaration
+						| recDeclaration
+						;
+
+recDeclaration			: RECORD ID '{' localDeclarations '}'
+						;
+
+varDeclaration			: typeSpecifier varDeclList ';'
+						;
+
+scopedVarDeclaration	: scopedTypeSpecifier varDeclList ';'
+						;
+
+varDeclList				: varDeclList ',' varDeclInitialize
+						| varDeclInitialize
+						;
+
+varDeclInitialize		: varDeclId
+						| varDeclId ':' simpleExpression
+						;
+
+varDeclId				: ID
+						| ID '[' NUMCONST ']'
+						;
+
+scopedTypeSpecifier		: STATIC typeSpecifier
+						| typeSpecifier
+						;
+
+typeSpecifier			: returnTypeSpecifier
+						| RECTYPE
+						;
+
+returnTypeSpecifier		: INT
+						| BOOL
+						| CHAR
+						;
+
+funDeclaration			: typeSpecifier ID '(' params ')' statement
+						| ID '(' params ')' statement
+						;
+
+params					: paramList
+						| %empty
+						;
+
+paramList				: paramList ';' paramTypeList
+						| paramTypeList
+						;
+
+paramTypeList			: typeSpecifier paramIdList
+						;
+
+paramIdList				: paramIdList ',' paramId
+						| paramId
+						;
+
+paramId					: ID
+						| ID '[' ']'
+						;
+
+statement				: expressionStmt
+						| compoundStmt
+						| selectionStmt
+						| iterationStmt
+						| returnStmt
+						| breakStmt
+						;
+
+compoundStmt			: '{' localDeclarations statementList '}'
+						;
+
+localDeclarations		: localDeclarations scopedVarDeclaration
+						| %empty
+						;
+
+statementList			: statementList statement
+						| %empty
+						;
+
+expressionStmt			: expression ';'
+						| ';'
+						;
+
+selectionStmt			: IF '(' simpleExpression ')' statement
+						| IF '(' simpleExpression ')' statement ELSE statement
+						;
+
+iterationStmt			: WHILE '(' simpleExpression ')' statement
+						;
+
+returnStmt				: RETURN ';'
+						| RETURN expression ';'
+						;
+
+breakStmt				: BREAK ';'
+						;
+
+expression				: mutable '=' expression
+						| mutable ADDASS expression
+						| mutable SUBASS expression
+						| mutable MULASS expression
+						| mutable DIVASS expression
+						| mutable INC
+						| mutable DEC
+						| simpleExpression
+						;
+
+simpleExpression		: simpleExpression OR andExpression
+						| andExpression
+						;
+
+andExpression			: andExpression AND unaryRelExpression
+						| unaryRelExpression
+						;
+
+unaryRelExpression		: NOT unaryRelExpression
+						| relExpression
+						;
+
+relExpression			: sumExpression relop sumExpression
+						| sumExpression
+						;
+
+relop					: LESSEQ
+						| '<'
+						| '>'
+						| GRTEQ
+						| EQ
+						| NOTEQ
+						;
+
+sumExpression			: sumExpression sumop term
+						| term
+						;
+
+sumop					: '+'
+						| '-'
+						;
+
+term					: term mulop unaryExpression
+						| unaryExpression
+						;
+
+mulop					: '*'
+						| '/'
+						| '%'
+						;
+
+unaryExpression			: unaryop unaryExpression
+						| factor
+						;
+
+unaryop					: '-'
+						| '*'
+						| '?'
+						;
+
+factor					: immutable
+						| mutable
+						;
+
+mutable					: ID
+						| mutable '[' expression ']'
+						| mutable '.' ID
+						;
+
+immutable				: '(' expression ')'
+						| call
+						| constant
+						;
+
+call					: ID '(' args ')'
+						;
+
+args					: argList
+						| %empty
+						;
+
+argList					: argList ',' expression
+						| expression
+						;
+
+constant				: NUMCONST
+						| CHARCONST
+						| BOOLCONST
+						;
 
 %%
 
