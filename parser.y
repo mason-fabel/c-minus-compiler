@@ -3,7 +3,9 @@
 #include <stdlib.h>
 #include "getopt.h"
 #include "token.h"
-#include "scope.h"
+#include "symbolTable.h"
+
+#define DEFINED 1
 
 extern void scanner_use_file(char*);
 extern int yylex(void);
@@ -16,6 +18,8 @@ void print_value(token_t* tok);
 void print_input(token_t* tok);
 void print_token(token_t* tok);
 const char* token_name(int token_class);
+
+Scope* record_types = new Scope("record");
 %}
 
 %union {
@@ -89,7 +93,10 @@ declaration				: varDeclaration
 						| recDeclaration
 						;
 
-recDeclaration			: RECORD ID '{' localDeclarations '}'
+recDeclaration			: RECORD ID '{' localDeclarations '}' {
+							record_types->insert(std::string($2->value.str_val),
+								(void*) DEFINED);
+						}
 						;
 
 varDeclaration			: typeSpecifier varDeclList ';'
@@ -146,10 +153,23 @@ paramId					: ID
 						| ID '[' ']'
 						;
 
-statement				: expressionStmt
+statement				: matchedStmt
+						| unmatchedStmt
+						;
+
+matchedStmt				: IF '(' simpleExpression ')' matchedStmt ELSE matchedStmt
+						| WHILE '(' simpleExpression ')' matchedStmt
+						| otherStmt
+						;
+
+unmatchedStmt			: IF '(' simpleExpression ')' matchedStmt
+						| IF '(' simpleExpression ')' unmatchedStmt
+						| IF '(' simpleExpression ')' matchedStmt ELSE unmatchedStmt
+						| WHILE '(' simpleExpression ')' unmatchedStmt
+						;
+
+otherStmt				: expressionStmt
 						| compoundStmt
-						| selectionStmt
-						| iterationStmt
 						| returnStmt
 						| breakStmt
 						;
@@ -167,13 +187,6 @@ statementList			: statementList statement
 
 expressionStmt			: expression ';'
 						| ';'
-						;
-
-selectionStmt			: IF '(' simpleExpression ')' statement
-						| IF '(' simpleExpression ')' statement ELSE statement
-						;
-
-iterationStmt			: WHILE '(' simpleExpression ')' statement
 						;
 
 returnStmt				: RETURN ';'
@@ -350,7 +363,7 @@ int main(int argc, char** argv) {
 	char c;
 	int i;
 
-	while ((c = getopt(argc, argv, "d")) != -1) {
+	while ((c = getopt(argc, argv, (char*) "d")) != -1) {
 		switch (c) {
 			case 'd':
 				yydebug = 1;

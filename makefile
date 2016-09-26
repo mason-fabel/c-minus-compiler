@@ -1,8 +1,8 @@
 CC := g++
 CFLAGS := -Wall -Wextra -Wpedantic -DYYDEBUG
 BIN := c-
-GEN := scanner.c parser.c parser.h
-OBJ := parser.o scanner.o getopt.o scope.o symbolTable.o
+GEN := scanner.c parser.c parser.h parser.output
+OBJ := parser.o scanner.o getopt.o symbolTable.o
 
 .PHONY : clean test
 
@@ -13,7 +13,7 @@ scanner.c : scanner.l parser.h token.h
 	flex --outfile=scanner.c scanner.l
 
 parser.c parser.h : parser.y token.h getopt.h
-	bison --defines=parser.h --output=parser.c parser.y
+	bison --verbose --report=all --defines=parser.h -Wall -Werror --output=parser.c parser.y
 
 %.o : $.c
 	$(CC) $(CFLAGS) -c $<

@@ -3,10 +3,13 @@
 #include <stdlib.h>
 #include "token.h"
 #include "parser.h"
+#include "symbolTable.h"
 
 void scanner_error(void);
 void scanner_use_file(char* fname);
 int create_token(int token_class);
+
+extern Scope* record_types;
 %}
 
 %option yylineno
@@ -113,6 +116,10 @@ int create_token(int token_class) {
 			break;
 
 		case ID:
+			if (record_types->lookup(std::string(yytext)) != NULL) {
+				return create_token(RECTYPE);
+			}
+
 			yylval.token->value_mode = MODE_STR;
 			yylval.token->value.str_val = strdup(yytext);
 			break;

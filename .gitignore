@@ -5,11 +5,12 @@ c-
 # Generated files
 parser.h
 parser.c
+parser.output
 scanner.c
 fabe0940.tar
 
 # Test files
 test/*
 
-# Vim temp files
+# Temp files
 *.swp
