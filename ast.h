@@ -8,4 +8,6 @@ struct _ast {
 };
 typedef struct _ast ast_t;
 
+void ast_print(ast_t* tree);
+
 #endif /* _AST_H_ */

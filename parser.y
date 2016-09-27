@@ -20,7 +20,10 @@ void print_input(token_t* tok);
 void print_token(token_t* tok);
 const char* token_name(int token_class);
 
+int parser_errors = 0;
+int parser_warnings = 0;
 Scope* record_types = new Scope("record");
+ast_t* syntax_tree;
 %}
 
 %union {
@@ -82,7 +85,9 @@ Scope* record_types = new Scope("record");
 
 %%
 
-program					: declarationList
+program					: declarationList {
+							syntax_tree = (ast_t*) malloc(sizeof(ast_t));
+						}
 						;
 
 declarationList			: declarationList declaration
@@ -392,6 +397,11 @@ int main(int argc, char** argv) {
 	}
 
 	yyparse();
+
+	ast_print(syntax_tree);
+
+	fprintf(stdout, "Number of warnings: %i\n", parser_warnings);
+	fprintf(stdout, "Number of errors: %i\n", parser_errors);
 
 	exit(0);
 }
