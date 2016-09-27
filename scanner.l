@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "token.h"
 #include "parser.h"
-#include "symbolTable.h"
+#include "symtab.h"
 
 void scanner_error(void);
 void scanner_use_file(char* fname);

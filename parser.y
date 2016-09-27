@@ -2,8 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "getopt.h"
+#include "ast.h"
+#include "symtab.h"
 #include "token.h"
-#include "symbolTable.h"
 
 #define DEFINED 1
 
