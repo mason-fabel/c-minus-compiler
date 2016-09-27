@@ -1,5 +1,5 @@
 CC := g++
-CFLAGS := -Wall -Wextra -Wpedantic -DYYDEBUG
+CFLAGS := -Wall -Wextra -DYYDEBUG
 BIN := c-
 GEN := scanner.c parser.c parser.h parser.output
 OBJ := ast.o getopt.o parser.o scanner.o symtab.o
