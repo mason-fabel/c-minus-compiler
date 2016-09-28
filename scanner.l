@@ -1,9 +1,11 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
-#include "token.h"
+#include <string.h>
+#include "ast.h"
 #include "parser.h"
 #include "symtab.h"
+#include "token.h"
 
 void scanner_error(void);
 void scanner_use_file(char* fname);

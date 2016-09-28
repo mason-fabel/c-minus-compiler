@@ -1,6 +1,7 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "getopt.h"
 #include "ast.h"
 #include "symtab.h"
@@ -28,6 +29,7 @@ ast_t* syntax_tree;
 
 %union {
 	token_t* token;
+	ast_t* node;
 }
 
 %token <token> ADDASS
@@ -78,6 +80,52 @@ ast_t* syntax_tree;
 %type<token> ','
 %type<token> ':'
 %type<token> ';'
+%type<node> declarationList
+%type<node> declaration
+%type<node> recDeclaration
+%type<node> varDeclaration
+%type<node> scopedVarDeclaration
+%type<node> varDeclList
+%type<node> varDeclInitialize
+%type<node> varDeclId
+%type<node> scopedTypeSpecifier
+%type<node> typeSpecifier
+%type<node> returnTypeSpecifier
+%type<node> funDeclaration
+%type<node> params
+%type<node> paramList
+%type<node> paramTypeList
+%type<node> paramIdList
+%type<node> paramId
+%type<node> statement
+%type<node> matchedStmt
+%type<node> unmatchedStmt
+%type<node> otherStmt
+%type<node> compoundStmt
+%type<node> localDeclarations
+%type<node> statementList
+%type<node> expressionStmt
+%type<node> returnStmt
+%type<node> breakStmt
+%type<node> expression
+%type<node> simpleExpression
+%type<node> andExpression
+%type<node> unaryRelExpression
+%type<node> relExpression
+%type<node> relop
+%type<node> sumExpression
+%type<node> sumop
+%type<node> term
+%type<node> mulop
+%type<node> unaryExpression
+%type<node> unaryop
+%type<node> factor
+%type<node> mutable
+%type<node> immutable
+%type<node> call
+%type<node> args
+%type<node> argList
+%type<node> constant
 
 %token-table
 
@@ -86,210 +134,497 @@ ast_t* syntax_tree;
 %%
 
 program					: declarationList {
-							syntax_tree = (ast_t*) malloc(sizeof(ast_t));
+							syntax_tree = $1;
 						}
 						;
 
-declarationList			: declarationList declaration
-						| declaration
+declarationList			: declarationList declaration {
+							$$ = $1;
+							ast_add_sibling($$, $2);
+						}
+						| declaration {
+							$$ = $1;
+						}
 						;
 
-declaration				: varDeclaration
-						| funDeclaration
-						| recDeclaration
+declaration				: varDeclaration {
+							$$ = $1;
+						}
+						| funDeclaration {
+							$$ = $1;
+						}
+						| recDeclaration {
+							$$ = $1;
+						}
 						;
 
 recDeclaration			: RECORD ID '{' localDeclarations '}' {
 							record_types->insert(std::string($2->value.str_val),
 								(void*) DEFINED);
+
+							$$ = ast_from_token($1);
+							ast_add_child($$, 0, ast_from_token($2));
+							ast_add_child($$, 1, $4);
 						}
 						;
 
-varDeclaration			: typeSpecifier varDeclList ';'
+varDeclaration			: typeSpecifier varDeclList ';' {
+							char* msg;
+
+							msg = (char*) malloc(sizeof(char) * 80);
+							snprintf(msg, 80, "varDeclaration");
+
+							$$ = ast_create_node();
+							$$->value_mode = MODE_STR;
+							$$->value.str_val = msg;
+							ast_add_child($$, 0, $1);
+							ast_add_child($$, 1, $2);
+						}
 						;
 
-scopedVarDeclaration	: scopedTypeSpecifier varDeclList ';'
+scopedVarDeclaration	: scopedTypeSpecifier varDeclList ';' {
+							$$ = ast_create_node();
+							ast_add_child($$, 0, $1);
+							ast_add_child($$, 1, $2);
+						}
 						;
 
-varDeclList				: varDeclList ',' varDeclInitialize
-						| varDeclInitialize
+varDeclList				: varDeclList ',' varDeclInitialize {
+							$$ = $1;
+							ast_add_sibling($$, $3);
+						}
+						| varDeclInitialize {
+							$$ = $1;
+						}
 						;
 
-varDeclInitialize		: varDeclId
-						| varDeclId ':' simpleExpression
+varDeclInitialize		: varDeclId {
+							$$ = $1;
+						}
+						| varDeclId ':' simpleExpression {
+							$$ = $1;
+							ast_add_sibling($$, $3);
+						}
 						;
 
-varDeclId				: ID
-						| ID '[' NUMCONST ']'
+varDeclId				: ID {
+							$$ = ast_from_token($1);
+						}
+						| ID '[' NUMCONST ']' {
+							$$ = ast_from_token($1);
+							ast_add_sibling($$, ast_from_token($3));
+						}
 						;
 
-scopedTypeSpecifier		: STATIC typeSpecifier
-						| typeSpecifier
+scopedTypeSpecifier		: STATIC typeSpecifier {
+							$$ = $2;
+						}
+						| typeSpecifier {
+							$$ = $1;
+						}
 						;
 
-typeSpecifier			: returnTypeSpecifier
-						| RECTYPE
+typeSpecifier			: returnTypeSpecifier {
+							$$ = $1;
+						}
+						| RECTYPE {
+							$$ = ast_from_token($1);
+						}
 						;
 
-returnTypeSpecifier		: INT
-						| BOOL
-						| CHAR
+returnTypeSpecifier		: INT {
+							$$ = ast_from_token($1);
+							$$->value_mode = MODE_STR;
+							$$->value.str_val = strdup($1->input);
+						}
+						| BOOL {
+							$$ = ast_from_token($1);
+							$$->value_mode = MODE_STR;
+							$$->value.str_val = strdup($1->input);
+						}
+						| CHAR {
+							$$ = ast_from_token($1);
+							$$->value_mode = MODE_STR;
+							$$->value.str_val = strdup($1->input);
+						}
 						;
 
-funDeclaration			: typeSpecifier ID '(' params ')' statement
-						| ID '(' params ')' statement
+funDeclaration			: typeSpecifier ID '(' params ')' statement {
+							$$ = ast_from_token($2);
+						}
+						| ID '(' params ')' statement {
+							$$ = ast_from_token($1);
+						}
 						;
 
-params					: paramList
-						| %empty
+params					: paramList {
+							$$ = $1;
+						}
+						| %empty {
+							$$ = NULL;
+						}
 						;
 
-paramList				: paramList ';' paramTypeList
-						| paramTypeList
+paramList				: paramList ';' paramTypeList {
+							$$ = $1;
+							ast_add_sibling($$, $3);
+						}
+						| paramTypeList {
+							$$ = $1;
+						}
 						;
 
-paramTypeList			: typeSpecifier paramIdList
+paramTypeList			: typeSpecifier paramIdList {
+							$$ = $1;
+							ast_add_sibling($$, $2);
+						}
 						;
 
-paramIdList				: paramIdList ',' paramId
-						| paramId
+paramIdList				: paramIdList ',' paramId {
+							$$ = $1;
+							ast_add_sibling($$, $3);
+						}
+						| paramId {
+							$$ = $1;
+						}
 						;
 
-paramId					: ID
-						| ID '[' ']'
+paramId					: ID {
+							$$ = ast_from_token($1);
+						}
+						| ID '[' ']' {
+							$$ = ast_from_token($1);
+						}
 						;
 
-statement				: matchedStmt
-						| unmatchedStmt
+statement				: matchedStmt {
+							$$ = $1;
+						}
+						| unmatchedStmt {
+							$$ = $1;
+						}
 						;
 
-matchedStmt				: IF '(' simpleExpression ')' matchedStmt ELSE matchedStmt
-						| WHILE '(' simpleExpression ')' matchedStmt
-						| otherStmt
+matchedStmt				: IF '(' simpleExpression ')' matchedStmt ELSE matchedStmt {
+							$$ = ast_from_token($1);
+							ast_add_child($$, 0, $3);
+							ast_add_child($$, 1, $5);
+							ast_add_child($$, 2, $7);
+						}
+						| WHILE '(' simpleExpression ')' matchedStmt {
+							$$ = ast_from_token($1);
+							ast_add_child($$, 0, $3);
+							ast_add_child($$, 1, $5);
+						}
+						| otherStmt {
+							$$ = $1;
+						}
 						;
 
-unmatchedStmt			: IF '(' simpleExpression ')' matchedStmt
-						| IF '(' simpleExpression ')' unmatchedStmt
-						| IF '(' simpleExpression ')' matchedStmt ELSE unmatchedStmt
-						| WHILE '(' simpleExpression ')' unmatchedStmt
+unmatchedStmt			: IF '(' simpleExpression ')' matchedStmt {
+							$$ = ast_from_token($1);
+							ast_add_child($$, 0, $3);
+							ast_add_child($$, 1, $5);
+						}
+						| IF '(' simpleExpression ')' unmatchedStmt {
+							$$ = ast_from_token($1);
+							ast_add_child($$, 0, $3);
+							ast_add_child($$, 1, $5);
+						}
+						| IF '(' simpleExpression ')' matchedStmt ELSE unmatchedStmt {
+							$$ = ast_from_token($1);
+							ast_add_child($$, 0, $3);
+							ast_add_child($$, 1, $5);
+							ast_add_child($$, 2, $7);
+						}
+						| WHILE '(' simpleExpression ')' unmatchedStmt {
+							$$ = ast_from_token($1);
+							ast_add_child($$, 0, $3);
+							ast_add_child($$, 1, $5);
+						}
 						;
 
-otherStmt				: expressionStmt
-						| compoundStmt
-						| returnStmt
-						| breakStmt
+otherStmt				: expressionStmt {
+							$$ = $1;
+						}
+						| compoundStmt {
+							$$ = $1;
+						}
+						| returnStmt {
+							$$ = $1;
+						}
+						| breakStmt {
+							$$ = $1;
+						}
 						;
 
-compoundStmt			: '{' localDeclarations statementList '}'
+compoundStmt			: '{' localDeclarations statementList '}' {
+							$$ = $2;
+							ast_add_sibling($$, $3);
+						}
 						;
 
-localDeclarations		: localDeclarations scopedVarDeclaration
-						| %empty
+localDeclarations		: localDeclarations scopedVarDeclaration {
+							$$ = $1;
+							ast_add_sibling($$, $2);
+						}
+						| %empty {
+							$$ = NULL;
+						}
 						;
 
-statementList			: statementList statement
-						| %empty
+statementList			: statementList statement {
+							$$ = $1;
+							ast_add_sibling($$, $2);
+						}
+						| %empty {
+							$$ = NULL;
+						}
 						;
 
-expressionStmt			: expression ';'
-						| ';'
+expressionStmt			: expression ';' {
+							$$ = $1;
+						}
+						| ';' {
+							$$ = NULL;
+						}
 						;
 
-returnStmt				: RETURN ';'
-						| RETURN expression ';'
+returnStmt				: RETURN ';' {
+							$$ = ast_from_token($1);
+						}
+						| RETURN expression ';' {
+							$$ = ast_from_token($1);
+							ast_add_sibling($$, $2);
+						}
 						;
 
-breakStmt				: BREAK ';'
+breakStmt				: BREAK ';' {
+							$$ = ast_from_token($1);
+						}
 						;
 
-expression				: mutable '=' expression
-						| mutable ADDASS expression
-						| mutable SUBASS expression
-						| mutable MULASS expression
-						| mutable DIVASS expression
-						| mutable INC
-						| mutable DEC
-						| simpleExpression
+expression				: mutable '=' expression {
+							$$ = ast_from_token($2);
+							ast_add_child($$, 0, $1);
+							ast_add_child($$, 1, $3);
+						}
+						| mutable ADDASS expression {
+							$$ = ast_from_token($2);
+							ast_add_child($$, 0, $1);
+							ast_add_child($$, 1, $3);
+						}
+						| mutable SUBASS expression {
+							$$ = ast_from_token($2);
+							ast_add_child($$, 0, $1);
+							ast_add_child($$, 1, $3);
+						}
+						| mutable MULASS expression {
+							$$ = ast_from_token($2);
+							ast_add_child($$, 0, $1);
+							ast_add_child($$, 1, $3);
+						}
+						| mutable DIVASS expression {
+							$$ = ast_from_token($2);
+							ast_add_child($$, 0, $1);
+							ast_add_child($$, 1, $3);
+						}
+						| mutable INC {
+							$$ = ast_from_token($2);
+							ast_add_child($$, 0, $1);
+						}
+						| mutable DEC {
+							$$ = ast_from_token($2);
+							ast_add_child($$, 0, $1);
+						}
+						| simpleExpression {
+							$$ = $1;
+						}
 						;
 
-simpleExpression		: simpleExpression OR andExpression
-						| andExpression
+simpleExpression		: simpleExpression OR andExpression {
+							$$ = ast_from_token($2);
+							ast_add_child($$, 0, $1);
+							ast_add_child($$, 1, $3);
+						}
+						| andExpression {
+							$$ = $1;
+						}
 						;
 
-andExpression			: andExpression AND unaryRelExpression
-						| unaryRelExpression
+andExpression			: andExpression AND unaryRelExpression {
+							$$ = ast_from_token($2);
+							ast_add_child($$, 0, $1);
+							ast_add_child($$, 1, $3);
+						}
+						| unaryRelExpression {
+							$$ = $1;
+						}
 						;
 
-unaryRelExpression		: NOT unaryRelExpression
-						| relExpression
+unaryRelExpression		: NOT unaryRelExpression {
+							$$ = ast_from_token($1);
+							ast_add_child($$, 0, $2);
+						}
+						| relExpression {
+							$$ = $1;
+						}
 						;
 
-relExpression			: sumExpression relop sumExpression
-						| sumExpression
+relExpression			: sumExpression relop sumExpression {
+							$$ = $2;
+							ast_add_child($$, 0, $1);
+							ast_add_child($$, 1, $3);
+						}
+						| sumExpression {
+							$$ = $1;
+						}
 						;
 
-relop					: LESSEQ
-						| '<'
-						| '>'
-						| GRTEQ
-						| EQ
-						| NOTEQ
+relop					: LESSEQ {
+							$$ = ast_from_token($1);
+						}
+						| '<' {
+							$$ = ast_from_token($1);
+						}
+						| '>' {
+							$$ = ast_from_token($1);
+						}
+						| GRTEQ {
+							$$ = ast_from_token($1);
+						}
+						| EQ {
+							$$ = ast_from_token($1);
+						}
+						| NOTEQ {
+							$$ = ast_from_token($1);
+						}
 						;
 
-sumExpression			: sumExpression sumop term
-						| term
+sumExpression			: sumExpression sumop term {
+							$$ = $2;
+							ast_add_child($$, 0, $1);
+							ast_add_child($$, 1, $3);
+						}
+						| term {
+							$$ = $1;
+						}
 						;
 
-sumop					: '+'
-						| '-'
+sumop					: '+' {
+							$$ = ast_from_token($1);
+						}
+						| '-' {
+							$$ = ast_from_token($1);
+						}
 						;
 
-term					: term mulop unaryExpression
-						| unaryExpression
+term					: term mulop unaryExpression {
+							$$ = $2;
+							ast_add_child($$, 0, $1);
+							ast_add_child($$, 1, $3);
+						}
+						| unaryExpression {
+							$$ = $1;
+						}
 						;
 
-mulop					: '*'
-						| '/'
-						| '%'
+mulop					: '*' {
+							$$ = ast_from_token($1);
+						}
+						| '/' {
+							$$ = ast_from_token($1);
+						}
+						| '%' {
+							$$ = ast_from_token($1);
+						}
 						;
 
-unaryExpression			: unaryop unaryExpression
-						| factor
+unaryExpression			: unaryop unaryExpression {
+							$$ = $1;
+							ast_add_child($$, 0, $1);
+						}
+						| factor {
+							$$ = $1;
+						}
 						;
 
-unaryop					: '-'
-						| '*'
-						| '?'
+unaryop					: '-' {
+							$$ = ast_from_token($1);
+						}
+						| '*' {
+							$$ = ast_from_token($1);
+						}
+						| '?' {
+							$$ = ast_from_token($1);
+						}
 						;
 
-factor					: immutable
-						| mutable
+factor					: immutable {
+							$$ = $1;
+						}
+						| mutable {
+							$$ = $1;
+						}
 						;
 
-mutable					: ID
-						| mutable '[' expression ']'
-						| mutable '.' ID
+mutable					: ID {
+							$$ = ast_from_token($1);
+						}
+						| mutable '[' expression ']' {
+							$$ = ast_from_token($2);
+							ast_add_child($$, 0, $1);
+							ast_add_child($$, 1, $3);
+						}
+						| mutable '.' ID {
+							$$ = ast_from_token($2);
+							ast_add_child($$, 0, $1);
+							ast_add_child($$, 1, ast_from_token($3));
+						}
 						;
 
-immutable				: '(' expression ')'
-						| call
-						| constant
+immutable				: '(' expression ')' {
+							$$ = $2;
+						}
+						| call {
+							$$ = $1;
+						}
+						| constant {
+							$$ = $1;
+						}
 						;
 
-call					: ID '(' args ')'
+call					: ID '(' args ')' {
+							$$ = ast_from_token($1);
+							ast_add_child($$, 0, $3);
+						}
 						;
 
-args					: argList
-						| %empty
+args					: argList {
+							$$ = $1;
+						}
+						| %empty {
+							$$ = NULL;
+						}
 						;
 
-argList					: argList ',' expression
-						| expression
+argList					: argList ',' expression {
+							ast_add_sibling($$, $3);
+						}
+						| expression {
+							$$ = $1;
+						}
 						;
 
-constant				: NUMCONST
-						| CHARCONST
-						| BOOLCONST
+constant				: NUMCONST {
+							$$ = ast_from_token($1);
+						}
+						| CHARCONST {
+							$$ = ast_from_token($1);
+						}
+						| BOOLCONST {
+							$$ = ast_from_token($1);
+						}
 						;
 
 %%

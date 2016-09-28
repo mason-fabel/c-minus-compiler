@@ -13,7 +13,8 @@ scanner.c : scanner.l parser.h symtab.h token.h
 	flex --outfile=scanner.c scanner.l
 
 parser.c parser.h : parser.y ast.h token.h getopt.h symtab.h
-	bison --verbose --report=all --defines=parser.h -Wall -Werror --output=parser.c parser.y
+	bison --verbose --report=all --defines=parser.h -Wall -Werror \
+		--output=parser.c parser.y
 
 %.o : $.c
 	$(CC) $(CFLAGS) -c $<
