@@ -6,6 +6,9 @@
 #include "token.h"
 
 typedef enum {
+	TYPE_FUNC_BOOL,
+	TYPE_FUNC_CHAR,
+	TYPE_FUNC_INT,
 	TYPE_NONE,
 	TYPE_TOKEN_CHAR,
 	TYPE_TOKEN_INT,
@@ -14,12 +17,16 @@ typedef enum {
 	TYPE_VAR_BOOL,
 	TYPE_VAR_CHAR,
 	TYPE_VAR_INT,
+	TYPE_VAR_BOOL_ARRAY,
+	TYPE_VAR_CHAR_ARRAY,
+	TYPE_VAR_INT_ARRAY,
 } ast_type_t;
 
 typedef struct {
 	char* name;
 	int token_class;
 	int int_val;
+	int bool_val;
 	char char_val;
 	char* str_val;
 } ast_data_t;

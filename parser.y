@@ -169,25 +169,44 @@ recDeclaration			: RECORD ID '{' localDeclarations '}' {
 						;
 
 varDeclaration			: typeSpecifier varDeclList ';' {
+							int is_array;
 							ast_t* node;
 							ast_t* decl;
 
+							is_array = 0;
 							$$ = NULL;
 							node = $2;
+
 
 							while (node != NULL) {
 								decl = ast_create_node();
 								decl->lineno = node->lineno;
 
+								if (node->sibling != NULL) {
+									is_array = 1;
+								}
+
 								switch ($1->data.token_class) {
 									case BOOL:
-										decl->type = TYPE_VAR_BOOL;
+										if (is_array) {
+											decl->type = TYPE_VAR_BOOL_ARRAY;
+										} else {
+											decl->type = TYPE_VAR_BOOL;
+										}
 										break;
 									case CHAR:
-										decl->type = TYPE_VAR_CHAR;
+										if (is_array) {
+											decl->type = TYPE_VAR_CHAR_ARRAY;
+										} else {
+											decl->type = TYPE_VAR_CHAR;
+										}
 										break;
 									case INT:
-										decl->type = TYPE_VAR_INT;
+										if (is_array) {
+											decl->type = TYPE_VAR_INT_ARRAY;
+										} else {
+											decl->type = TYPE_VAR_INT;
+										}
 										break;
 								}
 
@@ -266,7 +285,25 @@ returnTypeSpecifier		: INT {
 						;
 
 funDeclaration			: typeSpecifier ID '(' params ')' statement {
-							$$ = ast_from_token($2);
+							$$ = ast_create_node();
+							$$->lineno = $2->lineno;
+
+							switch ($1->data.token_class) {
+								case BOOL:
+									$$->type = TYPE_FUNC_BOOL;
+									break;
+								case CHAR:
+									$$->type = TYPE_FUNC_CHAR;
+									break;
+								case INT:
+									$$->type = TYPE_FUNC_INT;
+									break;
+							}
+
+							$$->data.name = strdup($2->value.str_val);
+
+							ast_add_child($$, 0, $4);
+							ast_add_child($$, 1, $6);
 						}
 						| ID '(' params ')' statement {
 							$$ = ast_from_token($1);

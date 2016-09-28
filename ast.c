@@ -110,11 +110,11 @@ void _ast_print(ast_t* node, int level, int sibling_num, int child_num) {
 	}
 
 	if (sibling_num > -1) {
-		fprintf(stdout, "Sibling: %i ", sibling_num);
+		fprintf(stdout, "Sibling: %i  ", sibling_num);
 	}
 
 	if (child_num > -1) {
-		fprintf(stdout, "Child: %i ", child_num);
+		fprintf(stdout, "Child: %i  ", child_num);
 	}
 
 	_ast_print_data(node);
@@ -133,6 +133,30 @@ void _ast_print(ast_t* node, int level, int sibling_num, int child_num) {
 
 void _ast_print_data(ast_t* node) {
 	switch (node->type) {
+		case TYPE_FUNC_BOOL:
+			fprintf(stdout, "Func %s returns type bool", node->data.name);
+			break;
+		case TYPE_FUNC_CHAR:
+			fprintf(stdout, "Func %s returns type char", node->data.name);
+			break;
+		case TYPE_FUNC_INT:
+			fprintf(stdout, "Func %s returns type int", node->data.name);
+			break;
+		case TYPE_TOKEN_CHAR:
+			fprintf(stdout, "Token %s of value %c",
+				node->data.name, node->data.char_val);
+			break;
+		case TYPE_TOKEN_INT:
+			fprintf(stdout, "Token %s of value %i",
+				node->data.name, node->data.int_val);
+			break;
+		case TYPE_TOKEN_NONE:
+			fprintf(stdout, "Token %s", node->data.name);
+			break;
+		case TYPE_TOKEN_STR:
+			fprintf(stdout, "Token %s of value %s",
+				node->data.name, node->data.str_val);
+			break;
 		case TYPE_VAR_BOOL:
 			fprintf(stdout, "Var %s of type bool", node->data.name);
 			break;
@@ -142,23 +166,19 @@ void _ast_print_data(ast_t* node) {
 		case TYPE_VAR_INT:
 			fprintf(stdout, "Var %s of type int", node->data.name);
 			break;
-		case TYPE_TOKEN_INT:
-			fprintf(stdout, "Token %s of value %i",
-				node->data.name, node->data.int_val);
+		case TYPE_VAR_BOOL_ARRAY:
+			fprintf(stdout, "Var %s is array of type bool", node->data.name);
 			break;
-		case TYPE_TOKEN_CHAR:
-			fprintf(stdout, "Token %s of value %c",
-				node->data.name, node->data.char_val);
+		case TYPE_VAR_CHAR_ARRAY:
+			fprintf(stdout, "Var %s is array of type char", node->data.name);
 			break;
-		case TYPE_TOKEN_STR:
-			fprintf(stdout, "Token %s of value %s",
-				node->data.name, node->data.str_val);
-			break;
-		case TYPE_TOKEN_NONE:
-			fprintf(stdout, "Token %s", node->data.name);
+		case TYPE_VAR_INT_ARRAY:
+			fprintf(stdout, "Var %s is array of type int", node->data.name);
 			break;
 		case TYPE_NONE:
 			break;
+		default:
+			fprintf(stdout, "unknown node %i", node->type);
 	}
 
 	return;
