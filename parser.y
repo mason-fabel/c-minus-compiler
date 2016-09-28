@@ -169,16 +169,38 @@ recDeclaration			: RECORD ID '{' localDeclarations '}' {
 						;
 
 varDeclaration			: typeSpecifier varDeclList ';' {
-							char* msg;
+							ast_t* node;
+							ast_t* decl;
 
-							msg = (char*) malloc(sizeof(char) * 80);
-							snprintf(msg, 80, "varDeclaration");
+							$$ = NULL;
+							node = $2;
 
-							$$ = ast_create_node();
-							$$->value_mode = MODE_STR;
-							$$->value.str_val = msg;
-							ast_add_child($$, 0, $1);
-							ast_add_child($$, 1, $2);
+							while (node != NULL) {
+								decl = ast_create_node();
+								decl->lineno = node->lineno;
+
+								switch ($1->data.token_class) {
+									case BOOL:
+										decl->type = TYPE_VAR_BOOL;
+										break;
+									case CHAR:
+										decl->type = TYPE_VAR_CHAR;
+										break;
+									case INT:
+										decl->type = TYPE_VAR_INT;
+										break;
+								}
+
+								decl->data.name = node->data.str_val;
+
+								if ($$ == NULL) {
+									$$ = decl;
+								} else {
+									ast_add_sibling($$, decl);
+								}
+
+								node = node->sibling;
+							}
 						}
 						;
 
@@ -234,18 +256,12 @@ typeSpecifier			: returnTypeSpecifier {
 
 returnTypeSpecifier		: INT {
 							$$ = ast_from_token($1);
-							$$->value_mode = MODE_STR;
-							$$->value.str_val = strdup($1->input);
 						}
 						| BOOL {
 							$$ = ast_from_token($1);
-							$$->value_mode = MODE_STR;
-							$$->value.str_val = strdup($1->input);
 						}
 						| CHAR {
 							$$ = ast_from_token($1);
-							$$->value_mode = MODE_STR;
-							$$->value.str_val = strdup($1->input);
 						}
 						;
 
@@ -365,8 +381,11 @@ compoundStmt			: '{' localDeclarations statementList '}' {
 						;
 
 localDeclarations		: localDeclarations scopedVarDeclaration {
-							$$ = $1;
-							ast_add_sibling($$, $2);
+							if ($1 == NULL) {
+								$$ = $2;
+							} else {
+								ast_add_sibling($$, $2);
+							}
 						}
 						| %empty {
 							$$ = NULL;
@@ -374,8 +393,15 @@ localDeclarations		: localDeclarations scopedVarDeclaration {
 						;
 
 statementList			: statementList statement {
-							$$ = $1;
-							ast_add_sibling($$, $2);
+							if ($1 == NULL && $2 == NULL) {
+								$$ = NULL;
+							} else if ($1 == NULL) {
+								$$ = $2;
+							} else if ($2 == NULL) {
+								$$ = $1;
+							} else {
+								ast_add_sibling($$, $2);
+							}
 						}
 						| %empty {
 							$$ = NULL;

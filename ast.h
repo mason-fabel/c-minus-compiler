@@ -1,17 +1,36 @@
 #ifndef _AST_H_
 #define _AST_H_
 
+#define AST_MAX_CHILDREN 3
+
 #include "token.h"
 
-#define AST_MAX_CHILDREN 3
+typedef enum {
+	TYPE_NONE,
+	TYPE_TOKEN_CHAR,
+	TYPE_TOKEN_INT,
+	TYPE_TOKEN_STR,
+	TYPE_TOKEN_NONE,
+	TYPE_VAR_BOOL,
+	TYPE_VAR_CHAR,
+	TYPE_VAR_INT,
+} ast_type_t;
+
+typedef struct {
+	char* name;
+	int token_class;
+	int int_val;
+	char char_val;
+	char* str_val;
+} ast_data_t;
 
 struct _ast {
 	int lineno;
 	int num_children;
-	value_mode_t value_mode;
-	value_t value;
-	struct _ast* sibling;
+	ast_type_t type;
+	ast_data_t data;
 	struct _ast* child[AST_MAX_CHILDREN];
+	struct _ast* sibling;
 };
 typedef struct _ast ast_t;
 
