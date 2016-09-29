@@ -309,10 +309,16 @@ varDeclInitialize		: varDeclId {
 						;
 
 varDeclId				: ID {
-							$$ = ast_from_token($1);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_ID;
+							$$->data.name = $1->input;
 						}
 						| ID '[' NUMCONST ']' {
-							$$ = ast_from_token($1);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_ID;
+							$$->data.name = $1->input;
 							ast_add_child($$, 0, ast_from_token($3));
 						}
 						;
@@ -366,7 +372,12 @@ funDeclaration			: typeSpecifier ID '(' params ')' statement {
 							ast_add_child($$, 1, $6);
 						}
 						| ID '(' params ')' statement {
-							$$ = ast_from_token($1);
+							$$ = ast_create_node();
+							$$->lineno = $2->lineno;
+							$$->type = TYPE_FUNC_VOID;
+							$$->data.name = strdup($2->value.str_val);
+							ast_add_child($$, 0, $3);
+							ast_add_child($$, 1, $5);
 						}
 						;
 
@@ -395,7 +406,6 @@ paramTypeList			: typeSpecifier paramIdList {
 							is_array = 0;
 							$$ = NULL;
 							node = $2;
-
 
 							while (node != NULL) {
 								decl = ast_create_node();
@@ -429,7 +439,7 @@ paramTypeList			: typeSpecifier paramIdList {
 										break;
 								}
 
-								decl->data.name = strdup(node->data.str_val);
+								decl->data.name = strdup(node->data.name);
 
 								if ($$ == NULL) {
 									$$ = decl;
@@ -452,10 +462,16 @@ paramIdList				: paramIdList ',' paramId {
 						;
 
 paramId					: ID {
-							$$ = ast_from_token($1);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_ID;
+							$$->data.name = $1->input;
 						}
 						| ID '[' ']' {
-							$$ = ast_from_token($1);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_ID;
+							$$->data.name = $1->input;
 							ast_add_child($$, 0, ast_create_node());
 						}
 						;
@@ -820,7 +836,10 @@ factor					: immutable {
 						;
 
 mutable					: ID {
-							$$ = ast_from_token($1);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_ID;
+							$$->data.name = $1->input;
 						}
 						| mutable '[' expression ']' {
 							$$ = ast_create_node();
@@ -831,12 +850,20 @@ mutable					: ID {
 							ast_add_child($$, 1, $3);
 						}
 						| mutable '.' ID {
+							ast_t* id;
+
 							$$ = ast_create_node();
 							$$->lineno = $2->lineno;
 							$$->type = TYPE_OP;
 							$$->data.name = $2->input;
+
+							id = ast_create_node();
+							id->lineno = $3->lineno;
+							id->type = TYPE_ID;
+							id->data.name = $3->input;
+
 							ast_add_child($$, 0, $1);
-							ast_add_child($$, 1, ast_from_token($3));
+							ast_add_child($$, 1, id);
 						}
 						;
 

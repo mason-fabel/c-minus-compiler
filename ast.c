@@ -148,6 +148,12 @@ void _ast_print_data(ast_t* node) {
 		case TYPE_FUNC_INT:
 			fprintf(stdout, "Func %s returns type int", node->data.name);
 			break;
+		case TYPE_FUNC_VOID:
+			fprintf(stdout, "Func %s returns type void", node->data.name);
+			break;
+		case TYPE_ID:
+			fprintf(stdout, "ID: %s", node->data.name);
+			break;
 		case TYPE_IF:
 			fprintf(stdout, "If");
 			break;
