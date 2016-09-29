@@ -311,13 +311,13 @@ varDeclId				: ID {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = TYPE_ID;
-							$$->data.name = $1->input;
+							$$->data.name = strdup($1->input);
 						}
 						| ID '[' NUMCONST ']' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = TYPE_ID;
-							$$->data.name = $1->input;
+							$$->data.name = strdup($1->input);
 							ast_add_child($$, 0, ast_from_token($3));
 						}
 						;
@@ -464,13 +464,13 @@ paramId					: ID {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = TYPE_ID;
-							$$->data.name = $1->input;
+							$$->data.name = strdup($1->input);
 						}
 						| ID '[' ']' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = TYPE_ID;
-							$$->data.name = $1->input;
+							$$->data.name = strdup($1->input);
 							ast_add_child($$, 0, ast_create_node());
 						}
 						;
@@ -558,8 +558,6 @@ compoundStmt			: '{' localDeclarations statementList '}' {
 						;
 
 localDeclarations		: localDeclarations scopedVarDeclaration {
-							ast_t* node;
-
 							if ($1 == NULL) {
 								$$ = $2;
 							} else {
@@ -620,7 +618,7 @@ expression				: mutable '=' expression {
 							$$ = ast_create_node();
 							$$->lineno = $2->lineno;
 							$$->type = TYPE_ASSIGN;
-							$$->data.name = $2->input;
+							$$->data.name = strdup($2->input);
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
@@ -628,7 +626,7 @@ expression				: mutable '=' expression {
 							$$ = ast_create_node();
 							$$->lineno = $2->lineno;
 							$$->type = TYPE_ASSIGN;
-							$$->data.name = $2->input;
+							$$->data.name = strdup($2->input);
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
@@ -636,7 +634,7 @@ expression				: mutable '=' expression {
 							$$ = ast_create_node();
 							$$->lineno = $2->lineno;
 							$$->type = TYPE_ASSIGN;
-							$$->data.name = $2->input;
+							$$->data.name = strdup($2->input);
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
@@ -644,7 +642,7 @@ expression				: mutable '=' expression {
 							$$ = ast_create_node();
 							$$->lineno = $2->lineno;
 							$$->type = TYPE_ASSIGN;
-							$$->data.name = $2->input;
+							$$->data.name = strdup($2->input);
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
@@ -652,7 +650,7 @@ expression				: mutable '=' expression {
 							$$ = ast_create_node();
 							$$->lineno = $2->lineno;
 							$$->type = TYPE_ASSIGN;
-							$$->data.name = $2->input;
+							$$->data.name = strdup($2->input);
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
@@ -660,14 +658,14 @@ expression				: mutable '=' expression {
 							$$ = ast_create_node();
 							$$->lineno = $2->lineno;
 							$$->type = TYPE_OP;
-							$$->data.name = $2->input;
+							$$->data.name = strdup($2->input);
 							ast_add_child($$, 0, $1);
 						}
 						| mutable DEC {
 							$$ = ast_create_node();
 							$$->lineno = $2->lineno;
 							$$->type = TYPE_OP;
-							$$->data.name = $2->input;
+							$$->data.name = strdup($2->input);
 							ast_add_child($$, 0, $1);
 						}
 						| simpleExpression {
@@ -676,7 +674,10 @@ expression				: mutable '=' expression {
 						;
 
 simpleExpression		: simpleExpression OR andExpression {
-							$$ = ast_from_token($2);
+							$$ = ast_create_node();
+							$$->lineno = $2->lineno;
+							$$->type = TYPE_OP;
+							$$->data.name = strdup($2->input);
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
@@ -686,7 +687,10 @@ simpleExpression		: simpleExpression OR andExpression {
 						;
 
 andExpression			: andExpression AND unaryRelExpression {
-							$$ = ast_from_token($2);
+							$$ = ast_create_node();
+							$$->lineno = $2->lineno;
+							$$->type = TYPE_OP;
+							$$->data.name = strdup($2->input);
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
@@ -696,7 +700,10 @@ andExpression			: andExpression AND unaryRelExpression {
 						;
 
 unaryRelExpression		: NOT unaryRelExpression {
-							$$ = ast_from_token($1);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_OP;
+							$$->data.name = strdup($1->input);
 							ast_add_child($$, 0, $2);
 						}
 						| relExpression {
@@ -718,37 +725,37 @@ relop					: LESSEQ {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = TYPE_OP;
-							$$->data.name = $1->input;
+							$$->data.name = strdup($1->input);
 						}
 						| '<' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = TYPE_OP;
-							$$->data.name = $1->input;
+							$$->data.name = strdup($1->input);
 						}
 						| '>' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = TYPE_OP;
-							$$->data.name = $1->input;
+							$$->data.name = strdup($1->input);
 						}
 						| GRTEQ {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = TYPE_OP;
-							$$->data.name = $1->input;
+							$$->data.name = strdup($1->input);
 						}
 						| EQ {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = TYPE_OP;
-							$$->data.name = $1->input;
+							$$->data.name = strdup($1->input);
 						}
 						| NOTEQ {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = TYPE_OP;
-							$$->data.name = $1->input;
+							$$->data.name = strdup($1->input);
 						}
 						;
 
@@ -766,13 +773,13 @@ sumop					: '+' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = TYPE_OP;
-							$$->data.name = $1->input;
+							$$->data.name = strdup($1->input);
 						}
 						| '-' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = TYPE_OP;
-							$$->data.name = $1->input;
+							$$->data.name = strdup($1->input);
 						}
 						;
 
@@ -790,19 +797,19 @@ mulop					: '*' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = TYPE_OP;
-							$$->data.name = $1->input;
+							$$->data.name = strdup($1->input);
 						}
 						| '/' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = TYPE_OP;
-							$$->data.name = $1->input;
+							$$->data.name = strdup($1->input);
 						}
 						| '%' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = TYPE_OP;
-							$$->data.name = $1->input;
+							$$->data.name = strdup($1->input);
 						}
 						;
 
@@ -819,19 +826,19 @@ unaryop					: '-' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = TYPE_OP;
-							$$->data.name = $1->input;
+							$$->data.name = strdup($1->input);
 						}
 						| '*' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = TYPE_OP;
-							$$->data.name = $1->input;
+							$$->data.name = strdup($1->input);
 						}
 						| '?' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = TYPE_OP;
-							$$->data.name = $1->input;
+							$$->data.name = strdup($1->input);
 						}
 						;
 
@@ -847,13 +854,13 @@ mutable					: ID {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = TYPE_ID;
-							$$->data.name = $1->input;
+							$$->data.name = strdup($1->input);
 						}
 						| mutable '[' expression ']' {
 							$$ = ast_create_node();
 							$$->lineno = $2->lineno;
 							$$->type = TYPE_OP;
-							$$->data.name = $2->input;
+							$$->data.name = strdup($2->input);
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
@@ -863,12 +870,12 @@ mutable					: ID {
 							$$ = ast_create_node();
 							$$->lineno = $2->lineno;
 							$$->type = TYPE_OP;
-							$$->data.name = $2->input;
+							$$->data.name = strdup($2->input);
 
 							id = ast_create_node();
 							id->lineno = $3->lineno;
 							id->type = TYPE_ID;
-							id->data.name = $3->input;
+							id->data.name = strdup($3->input);
 
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, id);
