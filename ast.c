@@ -139,6 +139,16 @@ void _ast_print_data(ast_t* node) {
 		case TYPE_COMPOUND:
 			fprintf(stdout, "Compound");
 			break;
+		case TYPE_CONST_BOOL:
+			fprintf(stdout, "Const: %s",
+				node->data.bool_val ? "true" : "false");
+			break;
+		case TYPE_CONST_CHAR:
+			fprintf(stdout, "Const: %c", node->data.char_val);
+			break;
+		case TYPE_CONST_INT:
+			fprintf(stdout, "Const: %i", node->data.int_val);
+			break;
 		case TYPE_FUNC_BOOL:
 			fprintf(stdout, "Func %s returns type bool", node->data.name);
 			break;
@@ -152,7 +162,7 @@ void _ast_print_data(ast_t* node) {
 			fprintf(stdout, "Func %s returns type void", node->data.name);
 			break;
 		case TYPE_ID:
-			fprintf(stdout, "ID: %s", node->data.name);
+			fprintf(stdout, "Id: %s", node->data.name);
 			break;
 		case TYPE_IF:
 			fprintf(stdout, "If");

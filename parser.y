@@ -901,13 +901,22 @@ argList					: argList ',' expression {
 						;
 
 constant				: NUMCONST {
-							$$ = ast_from_token($1);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_CONST_INT;
+							$$->data.int_val = $1->value.int_val;
 						}
 						| CHARCONST {
-							$$ = ast_from_token($1);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_CONST_CHAR;
+							$$->data.char_val = $1->value.char_val;
 						}
 						| BOOLCONST {
-							$$ = ast_from_token($1);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_CONST_BOOL;
+							$$->data.bool_val = $1->value.int_val;
 						}
 						;
 
