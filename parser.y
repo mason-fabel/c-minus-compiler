@@ -651,14 +651,14 @@ expression				: mutable '=' expression {
 						| mutable INC {
 							$$ = ast_create_node();
 							$$->lineno = $2->lineno;
-							$$->type = TYPE_OP;
+							$$->type = TYPE_ASSIGN;
 							$$->data.name = strdup($2->input);
 							ast_add_child($$, 0, $1);
 						}
 						| mutable DEC {
 							$$ = ast_create_node();
 							$$->lineno = $2->lineno;
-							$$->type = TYPE_OP;
+							$$->type = TYPE_ASSIGN;
 							$$->data.name = strdup($2->input);
 							ast_add_child($$, 0, $1);
 						}

@@ -23,8 +23,8 @@ clean :
 	rm -f $(BIN) $(OBJ) $(GEN)
 
 test : $(BIN)
-	./c- test/scannerTest.c- > out.txt
-	cat test/scannerTest.out > good.txt
+	./c- test/everything06.c- > out.txt
+	cat test/everything06.out > good.txt
 	diff --text --side-by-side out.txt good.txt | less
 	rm out.txt good.txt
 
