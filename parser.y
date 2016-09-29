@@ -372,9 +372,9 @@ funDeclaration			: typeSpecifier ID '(' params ')' statement {
 						}
 						| ID '(' params ')' statement {
 							$$ = ast_create_node();
-							$$->lineno = $2->lineno;
+							$$->lineno = $1->lineno;
 							$$->type = TYPE_FUNC_VOID;
-							$$->data.name = strdup($2->value.str_val);
+							$$->data.name = strdup($1->value.str_val);
 							ast_add_child($$, 0, $3);
 							ast_add_child($$, 1, $5);
 						}
@@ -808,7 +808,7 @@ mulop					: '*' {
 
 unaryExpression			: unaryop unaryExpression {
 							$$ = $1;
-							ast_add_child($$, 0, $1);
+							ast_add_child($$, 0, $2);
 						}
 						| factor {
 							$$ = $1;
