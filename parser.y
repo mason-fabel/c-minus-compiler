@@ -169,11 +169,9 @@ recDeclaration			: RECORD ID '{' localDeclarations '}' {
 						;
 
 varDeclaration			: typeSpecifier varDeclList ';' {
-							int is_array;
 							ast_t* node;
 							ast_t* decl;
 
-							is_array = 0;
 							$$ = NULL;
 							node = $2;
 
@@ -181,42 +179,35 @@ varDeclaration			: typeSpecifier varDeclList ';' {
 							while (node != NULL) {
 								decl = ast_create_node();
 								decl->lineno = node->lineno;
-
-								if (node->child[0] != NULL) {
-									is_array = 1;
-								}
+								decl->data.name = strdup(node->data.name);
 
 								switch ($1->data.token_class) {
 									case BOOL:
-										if (is_array) {
+										if (node->data.is_array) {
 											decl->type = TYPE_VAR_BOOL_ARRAY;
-											decl->data.bool_val =
-												node->child[0]->data.bool_val;
 										} else {
 											decl->type = TYPE_VAR_BOOL;
 										}
 										break;
 									case CHAR:
-										if (is_array) {
+										if (node->data.is_array) {
 											decl->type = TYPE_VAR_CHAR_ARRAY;
-											decl->data.char_val =
-												node->child[0]->data.char_val;
 										} else {
 											decl->type = TYPE_VAR_CHAR;
 										}
 										break;
 									case INT:
-										if (is_array) {
+										if (node->data.is_array) {
 											decl->type = TYPE_VAR_INT_ARRAY;
-											decl->data.int_val =
-												node->child[0]->data.int_val;
 										} else {
 											decl->type = TYPE_VAR_INT;
 										}
 										break;
 								}
 
-								decl->data.name = strdup(node->data.name);
+								if (node->child[0]) {
+									ast_add_child(decl, 0, node->child[0]);
+								}
 
 								if ($$ == NULL) {
 									$$ = decl;
@@ -230,39 +221,34 @@ varDeclaration			: typeSpecifier varDeclList ';' {
 						;
 
 scopedVarDeclaration	: scopedTypeSpecifier varDeclList ';' {
-							int is_array;
 							ast_t* node;
 							ast_t* decl;
 
-							is_array = 0;
 							$$ = NULL;
 							node = $2;
 
 							while (node != NULL) {
 								decl = ast_create_node();
 								decl->lineno = node->lineno;
-
-								if (node->child[0] != NULL) {
-									is_array = 1;
-								}
+								decl->data.name = strdup(node->data.name);
 
 								switch ($1->data.token_class) {
 									case BOOL:
-										if (is_array) {
+										if (node->data.is_array) {
 											decl->type = TYPE_VAR_BOOL_ARRAY;
 										} else {
 											decl->type = TYPE_VAR_BOOL;
 										}
 										break;
 									case CHAR:
-										if (is_array) {
+										if (node->data.is_array) {
 											decl->type = TYPE_VAR_CHAR_ARRAY;
 										} else {
 											decl->type = TYPE_VAR_CHAR;
 										}
 										break;
 									case INT:
-										if (is_array) {
+										if (node->data.is_array) {
 											decl->type = TYPE_VAR_INT_ARRAY;
 										} else {
 											decl->type = TYPE_VAR_INT;
@@ -270,7 +256,9 @@ scopedVarDeclaration	: scopedTypeSpecifier varDeclList ';' {
 										break;
 								}
 
-								decl->data.name = strdup(node->data.name);
+								if (node->child[0]) {
+									ast_add_child(decl, 0, node->child[0]);
+								}
 
 								if ($$ == NULL) {
 									$$ = decl;
@@ -312,7 +300,7 @@ varDeclId				: ID {
 							$$->lineno = $1->lineno;
 							$$->type = TYPE_ID;
 							$$->data.name = strdup($1->input);
-							ast_add_child($$, 0, ast_from_token($3));
+							$$->data.is_array = 1;
 						}
 						;
 
@@ -392,39 +380,34 @@ paramList				: paramList ';' paramTypeList {
 						;
 
 paramTypeList			: typeSpecifier paramIdList {
-							int is_array;
 							ast_t* node;
 							ast_t* decl;
 
-							is_array = 0;
 							$$ = NULL;
 							node = $2;
 
 							while (node != NULL) {
 								decl = ast_create_node();
 								decl->lineno = node->lineno;
-
-								if (node->child[0] != NULL) {
-									is_array = 1;
-								}
+								decl->data.name = strdup(node->data.name);
 
 								switch ($1->data.token_class) {
 									case BOOL:
-										if (is_array) {
+										if (node->data.is_array) {
 											decl->type = TYPE_PARAM_BOOL_ARRAY;
 										} else {
 											decl->type = TYPE_PARAM_BOOL;
 										}
 										break;
 									case CHAR:
-										if (is_array) {
+										if (node->data.is_array) {
 											decl->type = TYPE_PARAM_CHAR_ARRAY;
 										} else {
 											decl->type = TYPE_PARAM_CHAR;
 										}
 										break;
 									case INT:
-										if (is_array) {
+										if (node->data.is_array) {
 											decl->type = TYPE_PARAM_INT_ARRAY;
 										} else {
 											decl->type = TYPE_PARAM_INT;
@@ -432,7 +415,9 @@ paramTypeList			: typeSpecifier paramIdList {
 										break;
 								}
 
-								decl->data.name = strdup(node->data.name);
+								if (node->child[0]) {
+									ast_add_child(decl, 0, node->child[0]);
+								}
 
 								if ($$ == NULL) {
 									$$ = decl;

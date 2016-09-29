@@ -44,6 +44,7 @@ typedef enum {
 typedef struct {
 	char* name;
 	int token_class;
+	int is_array;
 	int int_val;
 	int bool_val;
 	char char_val;

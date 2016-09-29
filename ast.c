@@ -24,6 +24,7 @@ ast_t* ast_create_node() {
 	node->type = TYPE_NONE;
 	node->data.name = NULL;
 	node->data.token_class = -1;
+	node->data.is_array = 0;
 	node->data.int_val = 0;
 	node->data.char_val = '\0';
 	node->data.str_val = NULL;
@@ -43,24 +44,23 @@ ast_t* ast_from_token(token_t* tok) {
 	node = ast_create_node();
 	node->lineno = tok->lineno;
 
+	node->data.name = strdup(token_name(tok->type));
+	node->data.token_class = tok->type;
+
 	switch (tok->value_mode) {
 		case MODE_CHAR:
-			node->data.name = strdup(token_name(tok->type));
 			node->type = TYPE_TOKEN_CHAR;
 			node->data.char_val = tok->value.char_val;
 			break;
 		case MODE_INT:
-			node->data.name = strdup(token_name(tok->type));
 			node->type = TYPE_TOKEN_INT;
 			node->data.int_val = tok->value.int_val;
 			break;
 		case MODE_STR:
-			node->data.name = strdup(token_name(tok->type));
 			node->type = TYPE_TOKEN_STR;
 			node->data.str_val = strdup(tok->value.str_val);
 			break;
 		case MODE_NONE:
-			node->data.name = strdup(token_name(tok->type));
 			node->type = TYPE_TOKEN_NONE;
 			break;
 		default:
@@ -68,7 +68,6 @@ ast_t* ast_from_token(token_t* tok) {
 			exit(1);
 	}
 
-	node->data.token_class = tok->type;
 
 	return node;
 }
