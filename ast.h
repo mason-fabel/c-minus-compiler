@@ -10,6 +10,7 @@ typedef enum {
 	TYPE_FUNC_BOOL,
 	TYPE_FUNC_CHAR,
 	TYPE_FUNC_INT,
+	TYPE_IF,
 	TYPE_NONE,
 	TYPE_PARAM_BOOL,
 	TYPE_PARAM_CHAR,
@@ -27,6 +28,7 @@ typedef enum {
 	TYPE_VAR_BOOL_ARRAY,
 	TYPE_VAR_CHAR_ARRAY,
 	TYPE_VAR_INT_ARRAY,
+	TYPE_WHILE,
 } ast_type_t;
 
 typedef struct {

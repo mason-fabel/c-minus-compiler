@@ -230,9 +230,63 @@ varDeclaration			: typeSpecifier varDeclList ';' {
 						;
 
 scopedVarDeclaration	: scopedTypeSpecifier varDeclList ';' {
-							$$ = ast_create_node();
-							ast_add_child($$, 0, $1);
-							ast_add_child($$, 1, $2);
+							int is_array;
+							ast_t* node;
+							ast_t* decl;
+
+							is_array = 0;
+							$$ = NULL;
+							node = $2;
+
+
+							while (node != NULL) {
+								decl = ast_create_node();
+								decl->lineno = node->lineno;
+
+								if (node->child[0] != NULL) {
+									is_array = 1;
+								}
+
+								switch ($1->data.token_class) {
+									case BOOL:
+										if (is_array) {
+											decl->type = TYPE_VAR_BOOL_ARRAY;
+											decl->data.bool_val =
+												node->child[0]->data.bool_val;
+										} else {
+											decl->type = TYPE_VAR_BOOL;
+										}
+										break;
+									case CHAR:
+										if (is_array) {
+											decl->type = TYPE_VAR_CHAR_ARRAY;
+											decl->data.char_val =
+												node->child[0]->data.char_val;
+										} else {
+											decl->type = TYPE_VAR_CHAR;
+										}
+										break;
+									case INT:
+										if (is_array) {
+											decl->type = TYPE_VAR_INT_ARRAY;
+											decl->data.int_val =
+												node->child[0]->data.int_val;
+										} else {
+											decl->type = TYPE_VAR_INT;
+										}
+										break;
+								}
+
+								decl->data.name = node->data.str_val;
+
+								if ($$ == NULL) {
+									$$ = decl;
+								} else {
+									ast_add_sibling($$, decl);
+								}
+
+								node = node->sibling;
+							}
 						}
 						;
 
@@ -415,13 +469,17 @@ statement				: matchedStmt {
 						;
 
 matchedStmt				: IF '(' simpleExpression ')' matchedStmt ELSE matchedStmt {
-							$$ = ast_from_token($1);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_IF;
 							ast_add_child($$, 0, $3);
 							ast_add_child($$, 1, $5);
 							ast_add_child($$, 2, $7);
 						}
 						| WHILE '(' simpleExpression ')' matchedStmt {
-							$$ = ast_from_token($1);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_WHILE;
 							ast_add_child($$, 0, $3);
 							ast_add_child($$, 1, $5);
 						}
@@ -431,23 +489,31 @@ matchedStmt				: IF '(' simpleExpression ')' matchedStmt ELSE matchedStmt {
 						;
 
 unmatchedStmt			: IF '(' simpleExpression ')' matchedStmt {
-							$$ = ast_from_token($1);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_IF;
 							ast_add_child($$, 0, $3);
 							ast_add_child($$, 1, $5);
 						}
 						| IF '(' simpleExpression ')' unmatchedStmt {
-							$$ = ast_from_token($1);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_IF;
 							ast_add_child($$, 0, $3);
 							ast_add_child($$, 1, $5);
 						}
 						| IF '(' simpleExpression ')' matchedStmt ELSE unmatchedStmt {
-							$$ = ast_from_token($1);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_IF;
 							ast_add_child($$, 0, $3);
 							ast_add_child($$, 1, $5);
 							ast_add_child($$, 2, $7);
 						}
 						| WHILE '(' simpleExpression ')' unmatchedStmt {
-							$$ = ast_from_token($1);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_WHILE;
 							ast_add_child($$, 0, $3);
 							ast_add_child($$, 1, $5);
 						}
@@ -472,7 +538,7 @@ compoundStmt			: '{' localDeclarations statementList '}' {
 							$$->lineno = $1->lineno;
 							$$->type = TYPE_COMPOUND;
 							ast_add_child($$, 0, $2);
-							ast_add_child($$, 0, $3);
+							ast_add_child($$, 1, $3);
 						}
 						;
 

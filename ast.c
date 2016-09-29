@@ -122,11 +122,11 @@ void _ast_print(ast_t* node, int level, int sibling_num, int child_num) {
 	fprintf(stdout, " [line: %i]", node->lineno);
 	fprintf(stdout, "\n");
 
-	_ast_print(node->sibling, level, sibling_num + 1, -1);
-
 	for (i = 0; i < node->num_children; i++) {
 		_ast_print(node->child[i], level + 1, -1, i);
 	}
+
+	_ast_print(node->sibling, level, sibling_num + 1, -1);
 
 	return;
 }
@@ -144,6 +144,11 @@ void _ast_print_data(ast_t* node) {
 			break;
 		case TYPE_FUNC_INT:
 			fprintf(stdout, "Func %s returns type int", node->data.name);
+			break;
+		case TYPE_IF:
+			fprintf(stdout, "If");
+			break;
+		case TYPE_NONE:
 			break;
 		case TYPE_PARAM_BOOL:
 			fprintf(stdout, "Param %s of type bool", node->data.name);
@@ -196,7 +201,8 @@ void _ast_print_data(ast_t* node) {
 		case TYPE_VAR_INT_ARRAY:
 			fprintf(stdout, "Var %s is array of type int", node->data.name);
 			break;
-		case TYPE_NONE:
+		case TYPE_WHILE:
+			fprintf(stdout, "While");
 			break;
 		default:
 			fprintf(stdout, "unknown node %i", node->type);
