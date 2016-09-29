@@ -133,6 +133,9 @@ void _ast_print(ast_t* node, int level, int sibling_num, int child_num) {
 
 void _ast_print_data(ast_t* node) {
 	switch (node->type) {
+		case TYPE_COMPOUND:
+			fprintf(stdout, "Compound");
+			break;
 		case TYPE_FUNC_BOOL:
 			fprintf(stdout, "Func %s returns type bool", node->data.name);
 			break;
@@ -141,6 +144,24 @@ void _ast_print_data(ast_t* node) {
 			break;
 		case TYPE_FUNC_INT:
 			fprintf(stdout, "Func %s returns type int", node->data.name);
+			break;
+		case TYPE_PARAM_BOOL:
+			fprintf(stdout, "Param %s of type bool", node->data.name);
+			break;
+		case TYPE_PARAM_CHAR:
+			fprintf(stdout, "Param %s of type char", node->data.name);
+			break;
+		case TYPE_PARAM_INT:
+			fprintf(stdout, "Param %s of type int", node->data.name);
+			break;
+		case TYPE_PARAM_BOOL_ARRAY:
+			fprintf(stdout, "Param %s is array of type bool", node->data.name);
+			break;
+		case TYPE_PARAM_CHAR_ARRAY:
+			fprintf(stdout, "Param %s is array of type char", node->data.name);
+			break;
+		case TYPE_PARAM_INT_ARRAY:
+			fprintf(stdout, "Param %s is array of type int", node->data.name);
 			break;
 		case TYPE_TOKEN_CHAR:
 			fprintf(stdout, "Token %s of value %c",
