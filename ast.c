@@ -136,6 +136,9 @@ void _ast_print_data(ast_t* node) {
 		case TYPE_ASSIGN:
 			fprintf(stdout, "Assign: %s", node->data.name);
 			break;
+		case TYPE_BREAK:
+			fprintf(stdout, "Break");
+			break;
 		case TYPE_COMPOUND:
 			fprintf(stdout, "Compound");
 			break;
@@ -189,6 +192,9 @@ void _ast_print_data(ast_t* node) {
 			break;
 		case TYPE_PARAM_INT_ARRAY:
 			fprintf(stdout, "Param %s is array of type int", node->data.name);
+			break;
+		case TYPE_RETURN:
+			fprintf(stdout, "Return");
 			break;
 		case TYPE_TOKEN_CHAR:
 			fprintf(stdout, "Token %s of value %c",

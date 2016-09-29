@@ -595,16 +595,22 @@ expressionStmt			: expression ';' {
 						;
 
 returnStmt				: RETURN ';' {
-							$$ = ast_from_token($1);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_RETURN;
 						}
 						| RETURN expression ';' {
-							$$ = ast_from_token($1);
-							ast_add_sibling($$, $2);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_RETURN;
+							ast_add_child($$, 0, $2);
 						}
 						;
 
 breakStmt				: BREAK ';' {
-							$$ = ast_from_token($1);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_BREAK;
 						}
 						;
 
