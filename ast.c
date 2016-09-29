@@ -133,6 +133,9 @@ void _ast_print(ast_t* node, int level, int sibling_num, int child_num) {
 
 void _ast_print_data(ast_t* node) {
 	switch (node->type) {
+		case TYPE_ASSIGN:
+			fprintf(stdout, "Assign: %s", node->data.name);
+			break;
 		case TYPE_COMPOUND:
 			fprintf(stdout, "Compound");
 			break;
@@ -149,6 +152,9 @@ void _ast_print_data(ast_t* node) {
 			fprintf(stdout, "If");
 			break;
 		case TYPE_NONE:
+			break;
+		case TYPE_OP:
+			fprintf(stdout, "Op: %s", node->data.name);
 			break;
 		case TYPE_PARAM_BOOL:
 			fprintf(stdout, "Param %s of type bool", node->data.name);

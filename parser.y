@@ -593,36 +593,57 @@ breakStmt				: BREAK ';' {
 						;
 
 expression				: mutable '=' expression {
-							$$ = ast_from_token($2);
+							$$ = ast_create_node();
+							$$->lineno = $2->lineno;
+							$$->type = TYPE_ASSIGN;
+							$$->data.name = $2->input;
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
 						| mutable ADDASS expression {
-							$$ = ast_from_token($2);
+							$$ = ast_create_node();
+							$$->lineno = $2->lineno;
+							$$->type = TYPE_ASSIGN;
+							$$->data.name = $2->input;
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
 						| mutable SUBASS expression {
-							$$ = ast_from_token($2);
+							$$ = ast_create_node();
+							$$->lineno = $2->lineno;
+							$$->type = TYPE_ASSIGN;
+							$$->data.name = $2->input;
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
 						| mutable MULASS expression {
-							$$ = ast_from_token($2);
+							$$ = ast_create_node();
+							$$->lineno = $2->lineno;
+							$$->type = TYPE_ASSIGN;
+							$$->data.name = $2->input;
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
 						| mutable DIVASS expression {
-							$$ = ast_from_token($2);
+							$$ = ast_create_node();
+							$$->lineno = $2->lineno;
+							$$->type = TYPE_ASSIGN;
+							$$->data.name = $2->input;
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
 						| mutable INC {
-							$$ = ast_from_token($2);
+							$$ = ast_create_node();
+							$$->lineno = $2->lineno;
+							$$->type = TYPE_OP;
+							$$->data.name = $2->input;
 							ast_add_child($$, 0, $1);
 						}
 						| mutable DEC {
-							$$ = ast_from_token($2);
+							$$ = ast_create_node();
+							$$->lineno = $2->lineno;
+							$$->type = TYPE_OP;
+							$$->data.name = $2->input;
 							ast_add_child($$, 0, $1);
 						}
 						| simpleExpression {
@@ -670,22 +691,40 @@ relExpression			: sumExpression relop sumExpression {
 						;
 
 relop					: LESSEQ {
-							$$ = ast_from_token($1);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_OP;
+							$$->data.name = $1->input;
 						}
 						| '<' {
-							$$ = ast_from_token($1);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_OP;
+							$$->data.name = $1->input;
 						}
 						| '>' {
-							$$ = ast_from_token($1);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_OP;
+							$$->data.name = $1->input;
 						}
 						| GRTEQ {
-							$$ = ast_from_token($1);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_OP;
+							$$->data.name = $1->input;
 						}
 						| EQ {
-							$$ = ast_from_token($1);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_OP;
+							$$->data.name = $1->input;
 						}
 						| NOTEQ {
-							$$ = ast_from_token($1);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_OP;
+							$$->data.name = $1->input;
 						}
 						;
 
@@ -700,10 +739,16 @@ sumExpression			: sumExpression sumop term {
 						;
 
 sumop					: '+' {
-							$$ = ast_from_token($1);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_OP;
+							$$->data.name = $1->input;
 						}
 						| '-' {
-							$$ = ast_from_token($1);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_OP;
+							$$->data.name = $1->input;
 						}
 						;
 
@@ -718,13 +763,22 @@ term					: term mulop unaryExpression {
 						;
 
 mulop					: '*' {
-							$$ = ast_from_token($1);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_OP;
+							$$->data.name = $1->input;
 						}
 						| '/' {
-							$$ = ast_from_token($1);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_OP;
+							$$->data.name = $1->input;
 						}
 						| '%' {
-							$$ = ast_from_token($1);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_OP;
+							$$->data.name = $1->input;
 						}
 						;
 
@@ -738,13 +792,22 @@ unaryExpression			: unaryop unaryExpression {
 						;
 
 unaryop					: '-' {
-							$$ = ast_from_token($1);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_OP;
+							$$->data.name = $1->input;
 						}
 						| '*' {
-							$$ = ast_from_token($1);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_OP;
+							$$->data.name = $1->input;
 						}
 						| '?' {
-							$$ = ast_from_token($1);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_OP;
+							$$->data.name = $1->input;
 						}
 						;
 
@@ -760,12 +823,18 @@ mutable					: ID {
 							$$ = ast_from_token($1);
 						}
 						| mutable '[' expression ']' {
-							$$ = ast_from_token($2);
+							$$ = ast_create_node();
+							$$->lineno = $2->lineno;
+							$$->type = TYPE_OP;
+							$$->data.name = $2->input;
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
 						| mutable '.' ID {
-							$$ = ast_from_token($2);
+							$$ = ast_create_node();
+							$$->lineno = $2->lineno;
+							$$->type = TYPE_OP;
+							$$->data.name = $2->input;
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, ast_from_token($3));
 						}
