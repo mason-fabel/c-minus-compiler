@@ -148,7 +148,7 @@ void _ast_print_data(ast_t* node) {
 				node->data.bool_val ? "true" : "false");
 			break;
 		case TYPE_CONST_CHAR:
-			fprintf(stdout, "Const: %c", node->data.char_val);
+			fprintf(stdout, "Const: '%c'", node->data.char_val);
 			break;
 		case TYPE_CONST_INT:
 			fprintf(stdout, "Const: %i", node->data.int_val);

@@ -450,7 +450,7 @@ paramId					: ID {
 							$$->lineno = $1->lineno;
 							$$->type = TYPE_ID;
 							$$->data.name = strdup($1->input);
-							ast_add_child($$, 0, ast_create_node());
+							$$->data.is_array = 1;
 						}
 						;
 
