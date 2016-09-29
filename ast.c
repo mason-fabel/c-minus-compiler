@@ -162,6 +162,9 @@ void _ast_print_data(ast_t* node) {
 		case TYPE_FUNC_INT:
 			fprintf(stdout, "Func %s returns type int", node->data.name);
 			break;
+		case TYPE_FUNC_REC:
+			fprintf(stdout, "Func %s returns type record", node->data.name);
+			break;
 		case TYPE_FUNC_VOID:
 			fprintf(stdout, "Func %s returns type void", node->data.name);
 			break;
@@ -185,6 +188,9 @@ void _ast_print_data(ast_t* node) {
 		case TYPE_PARAM_INT:
 			fprintf(stdout, "Param %s of type int", node->data.name);
 			break;
+		case TYPE_PARAM_REC:
+			fprintf(stdout, "Param %s of type record", node->data.name);
+			break;
 		case TYPE_PARAM_BOOL_ARRAY:
 			fprintf(stdout, "Param %s is array of type bool", node->data.name);
 			break;
@@ -193,6 +199,13 @@ void _ast_print_data(ast_t* node) {
 			break;
 		case TYPE_PARAM_INT_ARRAY:
 			fprintf(stdout, "Param %s is array of type int", node->data.name);
+			break;
+		case TYPE_PARAM_REC_ARRAY:
+			fprintf(stdout, "Param %s is array of type record",
+				node->data.name);
+			break;
+		case TYPE_RECORD:
+			fprintf(stdout, "Record %s ", node->data.name);
 			break;
 		case TYPE_RETURN:
 			fprintf(stdout, "Return");
@@ -221,6 +234,9 @@ void _ast_print_data(ast_t* node) {
 		case TYPE_VAR_INT:
 			fprintf(stdout, "Var %s of type int", node->data.name);
 			break;
+		case TYPE_VAR_REC:
+			fprintf(stdout, "Var %s of type record", node->data.name);
+			break;
 		case TYPE_VAR_BOOL_ARRAY:
 			fprintf(stdout, "Var %s is array of type bool", node->data.name);
 			break;
@@ -230,6 +246,8 @@ void _ast_print_data(ast_t* node) {
 		case TYPE_VAR_INT_ARRAY:
 			fprintf(stdout, "Var %s is array of type int", node->data.name);
 			break;
+		case TYPE_VAR_REC_ARRAY:
+			fprintf(stdout, "Var %s is array of type record", node->data.name);
 		case TYPE_WHILE:
 			fprintf(stdout, "While");
 			break;

@@ -159,12 +159,15 @@ declaration				: varDeclaration {
 						;
 
 recDeclaration			: RECORD ID '{' localDeclarations '}' {
-							record_types->insert(std::string($2->value.str_val),
+							record_types->insert(
+								std::string($2->value.str_val),
 								(void*) DEFINED);
 
-							$$ = ast_from_token($1);
-							ast_add_child($$, 0, ast_from_token($2));
-							ast_add_child($$, 1, $4);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_RECORD;
+							$$->data.name = strdup($2->input);
+							ast_add_child($$, 0, $4);
 						}
 						;
 
@@ -201,6 +204,13 @@ varDeclaration			: typeSpecifier varDeclList ';' {
 											decl->type = TYPE_VAR_INT_ARRAY;
 										} else {
 											decl->type = TYPE_VAR_INT;
+										}
+										break;
+									case RECTYPE:
+										if (node->data.is_array) {
+											decl->type = TYPE_VAR_REC_ARRAY;
+										} else {
+											decl->type = TYPE_VAR_REC;
 										}
 										break;
 								}
@@ -252,6 +262,13 @@ scopedVarDeclaration	: scopedTypeSpecifier varDeclList ';' {
 											decl->type = TYPE_VAR_INT_ARRAY;
 										} else {
 											decl->type = TYPE_VAR_INT;
+										}
+										break;
+									case RECTYPE:
+										if (node->data.is_array) {
+											decl->type = TYPE_VAR_REC_ARRAY;
+										} else {
+											decl->type = TYPE_VAR_REC;
 										}
 										break;
 								}
@@ -345,6 +362,9 @@ funDeclaration			: typeSpecifier ID '(' params ')' statement {
 								case INT:
 									$$->type = TYPE_FUNC_INT;
 									break;
+								case RECTYPE:
+									$$->type = TYPE_FUNC_REC;
+									break;
 							}
 
 							$$->data.name = strdup($2->value.str_val);
@@ -411,6 +431,13 @@ paramTypeList			: typeSpecifier paramIdList {
 											decl->type = TYPE_PARAM_INT_ARRAY;
 										} else {
 											decl->type = TYPE_PARAM_INT;
+										}
+										break;
+									case RECTYPE:
+										if (node->data.is_array) {
+											decl->type = TYPE_PARAM_REC_ARRAY;
+										} else {
+											decl->type = TYPE_PARAM_REC;
 										}
 										break;
 								}
