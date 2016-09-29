@@ -216,7 +216,7 @@ varDeclaration			: typeSpecifier varDeclList ';' {
 										break;
 								}
 
-								decl->data.name = node->data.str_val;
+								decl->data.name = strdup(node->data.name);
 
 								if ($$ == NULL) {
 									$$ = decl;
@@ -277,7 +277,7 @@ scopedVarDeclaration	: scopedTypeSpecifier varDeclList ';' {
 										break;
 								}
 
-								decl->data.name = node->data.str_val;
+								decl->data.name = strdup(node->data.name);
 
 								if ($$ == NULL) {
 									$$ = decl;
