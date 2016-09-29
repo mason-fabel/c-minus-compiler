@@ -238,7 +238,6 @@ scopedVarDeclaration	: scopedTypeSpecifier varDeclList ';' {
 							$$ = NULL;
 							node = $2;
 
-
 							while (node != NULL) {
 								decl = ast_create_node();
 								decl->lineno = node->lineno;
@@ -559,9 +558,12 @@ compoundStmt			: '{' localDeclarations statementList '}' {
 						;
 
 localDeclarations		: localDeclarations scopedVarDeclaration {
+							ast_t* node;
+
 							if ($1 == NULL) {
 								$$ = $2;
 							} else {
+								$$ = $1;
 								ast_add_sibling($$, $2);
 							}
 						}
@@ -885,7 +887,10 @@ immutable				: '(' expression ')' {
 						;
 
 call					: ID '(' args ')' {
-							$$ = ast_from_token($1);
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->type = TYPE_CALL;
+							$$->data.name = strdup($1->value.str_val);
 							ast_add_child($$, 0, $3);
 						}
 						;

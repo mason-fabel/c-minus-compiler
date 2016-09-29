@@ -85,7 +85,6 @@ void ast_add_sibling(ast_t* root, ast_t* sibling) {
 	}
 
 	root->sibling = sibling;
-	sibling->sibling = NULL;
 
 	return;
 }
@@ -138,6 +137,9 @@ void _ast_print_data(ast_t* node) {
 			break;
 		case TYPE_BREAK:
 			fprintf(stdout, "Break");
+			break;
+		case TYPE_CALL:
+			fprintf(stdout, "Call: %s", node->data.name);
 			break;
 		case TYPE_COMPOUND:
 			fprintf(stdout, "Compound");
