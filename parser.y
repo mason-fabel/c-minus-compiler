@@ -250,8 +250,6 @@ scopedVarDeclaration	: scopedTypeSpecifier varDeclList ';' {
 									case BOOL:
 										if (is_array) {
 											decl->type = TYPE_VAR_BOOL_ARRAY;
-											decl->data.bool_val =
-												node->child[0]->data.bool_val;
 										} else {
 											decl->type = TYPE_VAR_BOOL;
 										}
@@ -259,8 +257,6 @@ scopedVarDeclaration	: scopedTypeSpecifier varDeclList ';' {
 									case CHAR:
 										if (is_array) {
 											decl->type = TYPE_VAR_CHAR_ARRAY;
-											decl->data.char_val =
-												node->child[0]->data.char_val;
 										} else {
 											decl->type = TYPE_VAR_CHAR;
 										}
@@ -268,8 +264,6 @@ scopedVarDeclaration	: scopedTypeSpecifier varDeclList ';' {
 									case INT:
 										if (is_array) {
 											decl->type = TYPE_VAR_INT_ARRAY;
-											decl->data.int_val =
-												node->child[0]->data.int_val;
 										} else {
 											decl->type = TYPE_VAR_INT;
 										}
@@ -303,7 +297,7 @@ varDeclInitialize		: varDeclId {
 						}
 						| varDeclId ':' simpleExpression {
 							$$ = $1;
-							ast_add_sibling($$, $3);
+							ast_add_child($$, 0, $3);
 						}
 						;
 
