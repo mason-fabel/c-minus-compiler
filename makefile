@@ -1,35 +1,29 @@
-CC := g++
-CFLAGS := -Wall -Wextra -DYYDEBUG
+SRC := $(wildcard src/*.cpp)
+GEN := src/scanner.cpp src/parser.cpp src/parser.h src/parser.output
+OBJ := $(addprefix obj/,$(notdir $(SRC:.cpp=.o))) obj/scanner.o obj/parser.o
 BIN := c-
-GEN := scanner.c parser.c parser.h parser.output
-OBJ := ast.o getopt.o parser.o scanner.o symtab.o
 
-.PHONY : clean test
+BFLAGS := --verbose --report=all -Wall -Werror
+CFLAGS := -Wall -Wextra -DYYDEBUG
+LFLAGS := $(CFLAGS)
+
+.PHONY : clean
 
 $(BIN) : $(OBJ)
-	$(CC) $(CFLAGS) $(OBJ) -o $@
+	g++ $(LFLAGS) -o $@ $^
 
-scanner.c : scanner.l parser.h symtab.h token.h
-	flex --outfile=scanner.c scanner.l
+$(OBJ) : $(GEN)
 
-parser.c parser.h : parser.y ast.h token.h getopt.h symtab.h
-	bison --verbose --report=all --defines=parser.h -Wall -Werror \
-		--output=parser.c parser.y
+src/scanner.cpp : src/scanner.l src/parser.h
+	flex --outfile=src/scanner.cpp src/scanner.l
 
-%.o : $.c
-	$(CC) $(CFLAGS) -c $<
+src/parser.cpp src/parser.h : src/parser.y
+	bison $(BFLAGS) --defines=src/parser.h --output=src/parser.cpp src/parser.y
 
-clean :
-	rm -f $(BIN) $(OBJ) $(GEN)
+obj/%.o : src/%.cpp $(GEN)
+	g++ $(CFLAGS) -c -o $@ $<
 
-test : $(BIN)
-	./c- test/everything06.c- > out.txt
-	cat test/everything06.out > good.txt
-	diff --text --side-by-side out.txt good.txt | less
-	rm out.txt good.txt
-
-tar : 
-	tar -cf fabe0940.tar README makefile \
-		scanner.l parser.y \
-		ast.c getopt.c symtab.c \
-		ast.h getopt.h symtab.h token.h
+clean : 
+	rm -rf $(GEN)
+	rm -rf $(OBJ)
+	rm -rf $(BIN)

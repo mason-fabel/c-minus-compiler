@@ -4,6 +4,7 @@
 #include <assert.h>
 #include "ast.h"
 #include "token.h"
+#include "parser.h"
 
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 

@@ -16,13 +16,8 @@ extern int yydebug;
 extern int optind;
 
 void yyerror(const char* msg);
-void print_value(token_t* tok);
-void print_input(token_t* tok);
-void print_token(token_t* tok);
 const char* token_name(int token_class);
 
-int parser_errors = 0;
-int parser_warnings = 0;
 Scope* record_types = new Scope("record");
 ast_t* syntax_tree;
 %}
@@ -952,53 +947,6 @@ void yyerror(const char* msg) {
 	return;
 }
 
-void print_value(token_t* tok) {
-	switch (tok->value_mode) {
-		case MODE_NONE:
-			break;
-		case MODE_INT:
-			fprintf(stdout, " Value: %i", tok->value.int_val);
-			break;
-		case MODE_CHAR:
-			fprintf(stdout, " Value: \'%c\'", tok->value.char_val);
-			break;
-		case MODE_STR:
-			fprintf(stdout, " Value: %s", tok->value.str_val);
-			break;
-	}
-
-	return;
-}
-
-void print_input(token_t* tok) {
-	fprintf(stdout, "  Input: %s", tok->input);
-
-	return;
-}
-
-void print_token(token_t* tok) {
-	fprintf(stdout, "Line %i Token: %s", tok->lineno, token_name(tok->type));
-
-	switch (tok->type) {
-		case BOOLCONST:
-		case CHARCONST:
-		case ID:
-		case NUMCONST:
-			print_value(tok);
-	}
-
-	switch (tok->type) {
-		case BOOLCONST:
-		case CHARCONST:
-		case NUMCONST:
-			print_input(tok);
-	}
-
-	fprintf(stdout, "\n");
-
-	return;
-}
-
 const char* token_name(int token_class) {
 	char* name;
 
@@ -1015,45 +963,4 @@ const char* token_name(int token_class) {
 	}
 
 	return (const char*) name;
-}
-
-int main(int argc, char** argv) {
-	char c;
-	int i;
-
-	while ((c = getopt(argc, argv, (char*) "d")) != -1) {
-		switch (c) {
-			case 'd':
-				yydebug = 1;
-				break;
-			case '?':
-			default:
-				fprintf(stderr, "getopt: case '%c'\n", c);
-				exit(1);
-		}
-	}
-
-	switch (argc - optind) {
-		case 1:
-			scanner_use_file(argv[optind]);
-			break;
-		case 0:
-			/* read from STDIN */
-			break;
-		default:
-			fprintf(stderr, "%s: invalid arguments:\n", argv[0]);
-			for (i = optind; i < argc; i++) {
-				fprintf(stderr, "  %i: %s\n", i, argv[i]);
-			}
-			exit(1);
-	}
-
-	yyparse();
-
-	ast_print(syntax_tree);
-
-	fprintf(stdout, "Number of warnings: %i\n", parser_warnings);
-	fprintf(stdout, "Number of errors: %i\n", parser_errors);
-
-	exit(0);
 }

@@ -1,8 +1,16 @@
-obj/*
+# Generated files
+src/scanner.cpp
+src/parser.cpp
+src/parser.h
+src/parser.output
+
+# Binary files
 c-
-test/*
+obj/*
+
+# Test files
 fabe0940.tar
-src/*
+test/*
 
-
+# Temporary files
 *.swp
