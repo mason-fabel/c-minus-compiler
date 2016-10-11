@@ -1,12 +1,17 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
-#include "token.h"
+#include <string.h>
+#include "ast.h"
 #include "parser.h"
+#include "symtab.h"
+#include "token.h"
 
 void scanner_error(void);
 void scanner_use_file(char* fname);
 int create_token(int token_class);
+
+extern Scope* record_types;
 %}
 
 %option yylineno
@@ -69,7 +74,7 @@ void scanner_use_file(char* fname) {
 }
 
 int create_token(int token_class) {
-	yylval.token = malloc(sizeof(token_t));
+	yylval.token = (token_t*) malloc(sizeof(token_t));
 
 	if (yylval.token == NULL) {
 		fprintf(stderr,
@@ -113,6 +118,10 @@ int create_token(int token_class) {
 			break;
 
 		case ID:
+			if (record_types->lookup(std::string(yytext)) != NULL) {
+				return create_token(RECTYPE);
+			}
+
 			yylval.token->value_mode = MODE_STR;
 			yylval.token->value.str_val = strdup(yytext);
 			break;

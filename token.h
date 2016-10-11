@@ -1,24 +1,28 @@
 #ifndef _TOKEN_H_
 #define _TOKEN_H_
-typedef enum {
+
+enum _value_mode {
 	MODE_NONE,
 	MODE_INT,
 	MODE_CHAR,
 	MODE_STR
-} value_mode_t;
+} ;
+typedef enum _value_mode value_mode_t;
 
-typedef union {
+union _value {
 	int int_val;
 	char char_val;
 	char* str_val;
-} value_t;
+};
+typedef union _value value_t;
 
-typedef struct {
+struct _token {
 	int type;
 	int lineno;
 	char* input;
 	value_mode_t value_mode;
 	value_t value;
-} token_t;
+};
+typedef struct _token token_t;
 
 #endif /* _TOKEN_H_ */

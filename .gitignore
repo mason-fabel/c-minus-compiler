@@ -1,12 +1,8 @@
-# Binary files
-*.o
+obj/*
 c-
-
-# Generated files
-parser.h
-parser.c
-scanner.c
+test/*
 fabe0940.tar
+src/*
 
-# Vim temp files
+
 *.swp
