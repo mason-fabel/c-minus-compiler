@@ -1,16 +1,8 @@
-# Binary files
-*.o
+obj/*
 c-
-
-# Generated files
-parser.h
-parser.c
-parser.output
-scanner.c
-fabe0940.tar
-
-# Test files
 test/*
+fabe0940.tar
+src/*
 
-# Temp files
+
 *.swp
