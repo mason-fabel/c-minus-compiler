@@ -1,12 +1,5 @@
-# Generated files
-src/scanner.cpp
-src/parser.cpp
-src/parser.h
-src/parser.output
-
 # Binary files
 c-
-obj/*
 
 # Test files
 fabe0940.tar

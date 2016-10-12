@@ -3,6 +3,7 @@
 #include "ast.h"
 #include "flags.h"
 #include "getopt.h"
+#include "print_tree.h"
 
 extern void scanner_use_file(char* fname);
 extern int yyparse(void);

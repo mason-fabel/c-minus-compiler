@@ -67,7 +67,6 @@ struct _ast {
 };
 typedef struct _ast ast_t;
 
-void ast_print(ast_t* tree);
 void ast_add_sibling(ast_t* root, ast_t* sibling);
 void ast_add_child(ast_t* root, int index, ast_t* child);
 ast_t* ast_create_node();
