@@ -49,6 +49,7 @@ typedef enum {
 
 typedef struct {
 	char* name;
+	char* type;
 	int token_class;
 	int is_array;
 	int int_val;

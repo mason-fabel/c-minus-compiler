@@ -6,7 +6,15 @@
 void _ast_print(ast_t* node, int level, int sibling_num, int child_num);
 void _ast_print_data(ast_t* node);
 
-void ast_print(ast_t* tree) {
+typedef struct {
+	int aug;
+} print_options_t;
+
+static print_options_t opts;
+
+void ast_print(ast_t* tree, int aug) {
+	opts.aug = aug;
+
 	_ast_print(tree, 0, -1, -1);
 
 	return;
@@ -30,6 +38,8 @@ void _ast_print(ast_t* node, int level, int sibling_num, int child_num) {
 	}
 
 	_ast_print_data(node);
+
+	if (opts.aug) fprintf(stdout, " [type %s]", node->data.type);
 
 	fprintf(stdout, " [line: %i]", node->lineno);
 	fprintf(stdout, "\n");

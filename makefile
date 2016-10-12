@@ -7,7 +7,7 @@ BFLAGS := --verbose --report=all -Wall -Werror
 CFLAGS := -Wall -Wextra -DYYDEBUG
 LFLAGS := $(CFLAGS)
 
-.PHONY : clean
+.PHONY : clean test
 
 $(BIN) : $(OBJ)
 	g++ $(LFLAGS) -o $@ $^
@@ -27,3 +27,8 @@ clean :
 	rm -rf $(GEN)
 	rm -rf $(OBJ)
 	rm -rf $(BIN)
+
+test : $(BIN)
+	./$(BIN) -P test/tiny.c- > test.out
+	diff -y test.out test/tiny.out | less
+	rm -f test.out

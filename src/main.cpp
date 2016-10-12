@@ -4,6 +4,10 @@
 #include "flags.h"
 #include "getopt.h"
 #include "print_tree.h"
+#include "semantic.h"
+
+#define FALSE 0
+#define TRUE 1
 
 extern void scanner_use_file(char* fname);
 extern int yyparse(void);
@@ -55,7 +59,11 @@ int main(int argc, char** argv) {
 	if (flags.debug) yydebug = 1;
 	yyparse();
 
-	if (flags.print_ast) ast_print(syntax_tree);
+	if (flags.print_ast) ast_print(syntax_tree, FALSE);
+
+	sem_analysis(syntax_tree);
+
+	if (flags.print_aug_ast) ast_print(syntax_tree, TRUE);
 
 	fprintf(stdout, "Number of warnings: %i\n", warnings);
 	fprintf(stdout, "Number of errors: %i\n", errors);
