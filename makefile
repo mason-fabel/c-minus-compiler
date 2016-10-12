@@ -32,3 +32,6 @@ test : $(BIN)
 	./$(BIN) -P test/tiny.c- > test.out
 	diff -y test.out test/tiny.out | less
 	rm -f test.out
+
+tar : test clean
+	tar -cf fabe0940.tar makefile src obj
