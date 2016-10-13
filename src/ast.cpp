@@ -19,9 +19,9 @@ ast_t* ast_create_node() {
 
 	node->lineno = 0;
 
-	node->type = TYPE_NONE;
+	node->type = NODE_NONE;
 	node->data.name = NULL;
-	node->data.type = NULL;
+	node->data.type = TYPE_NONE;
 	node->data.token_class = -1;
 	node->data.is_array = 0;
 	node->data.int_val = 0;
@@ -48,19 +48,19 @@ ast_t* ast_from_token(token_t* tok) {
 
 	switch (tok->value_mode) {
 		case MODE_CHAR:
-			node->type = TYPE_TOKEN_CHAR;
+			node->type = NODE_TOKEN_CHAR;
 			node->data.char_val = tok->value.char_val;
 			break;
 		case MODE_INT:
-			node->type = TYPE_TOKEN_INT;
+			node->type = NODE_TOKEN_INT;
 			node->data.int_val = tok->value.int_val;
 			break;
 		case MODE_STR:
-			node->type = TYPE_TOKEN_STR;
+			node->type = NODE_TOKEN_STR;
 			node->data.str_val = strdup(tok->value.str_val);
 			break;
 		case MODE_NONE:
-			node->type = TYPE_TOKEN_NONE;
+			node->type = NODE_TOKEN_NONE;
 			break;
 		default:
 			fprintf(stderr, "ast_from_token: unknown token: %s\n", tok->input);
