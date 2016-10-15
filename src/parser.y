@@ -177,38 +177,10 @@ varDeclaration			: typeSpecifier varDeclList ';' {
 							while (node != NULL) {
 								decl = ast_create_node();
 								decl->lineno = node->lineno;
+								decl->type = NODE_VAR;
 								decl->data.name = strdup(node->data.name);
-
-								switch ($1->data.token_class) {
-									case BOOL:
-										if (node->data.is_array) {
-											decl->type = NODE_VAR_BOOL_ARRAY;
-										} else {
-											decl->type = NODE_VAR_BOOL;
-										}
-										break;
-									case CHAR:
-										if (node->data.is_array) {
-											decl->type = NODE_VAR_CHAR_ARRAY;
-										} else {
-											decl->type = NODE_VAR_CHAR;
-										}
-										break;
-									case INT:
-										if (node->data.is_array) {
-											decl->type = NODE_VAR_INT_ARRAY;
-										} else {
-											decl->type = NODE_VAR_INT;
-										}
-										break;
-									case RECTYPE:
-										if (node->data.is_array) {
-											decl->type = NODE_VAR_REC_ARRAY;
-										} else {
-											decl->type = NODE_VAR_REC;
-										}
-										break;
-								}
+								decl->data.type = node->data.type;
+								decl->data.is_array = node->data.is_array;
 
 								if (node->child[0]) {
 									ast_add_child(decl, 0, node->child[0]);
@@ -236,37 +208,9 @@ scopedVarDeclaration	: scopedTypeSpecifier varDeclList ';' {
 								decl = ast_create_node();
 								decl->lineno = node->lineno;
 								decl->data.name = strdup(node->data.name);
-
-								switch ($1->data.token_class) {
-									case BOOL:
-										if (node->data.is_array) {
-											decl->type = NODE_VAR_BOOL_ARRAY;
-										} else {
-											decl->type = NODE_VAR_BOOL;
-										}
-										break;
-									case CHAR:
-										if (node->data.is_array) {
-											decl->type = NODE_VAR_CHAR_ARRAY;
-										} else {
-											decl->type = NODE_VAR_CHAR;
-										}
-										break;
-									case INT:
-										if (node->data.is_array) {
-											decl->type = NODE_VAR_INT_ARRAY;
-										} else {
-											decl->type = NODE_VAR_INT;
-										}
-										break;
-									case RECTYPE:
-										if (node->data.is_array) {
-											decl->type = NODE_VAR_REC_ARRAY;
-										} else {
-											decl->type = NODE_VAR_REC;
-										}
-										break;
-								}
+								decl->type = NODE_VAR;
+								decl->data.type = node->data.type;
+								decl->data.is_array = node->data.is_array;
 
 								if (node->child[0]) {
 									ast_add_child(decl, 0, node->child[0]);
@@ -346,19 +290,20 @@ returnTypeSpecifier		: INT {
 funDeclaration			: typeSpecifier ID '(' params ')' statement {
 							$$ = ast_create_node();
 							$$->lineno = $2->lineno;
+							$$->type = NODE_FUNC;
 
 							switch ($1->data.token_class) {
 								case BOOL:
-									$$->type = NODE_FUNC_BOOL;
+									$$->data.type = TYPE_BOOL;
 									break;
 								case CHAR:
-									$$->type = NODE_FUNC_CHAR;
+									$$->data.type = TYPE_CHAR;
 									break;
 								case INT:
-									$$->type = NODE_FUNC_INT;
+									$$->data.type = TYPE_INT;
 									break;
 								case RECTYPE:
-									$$->type = NODE_FUNC_REC;
+									$$->data.type = TYPE_RECORD;
 									break;
 							}
 
@@ -370,7 +315,8 @@ funDeclaration			: typeSpecifier ID '(' params ')' statement {
 						| ID '(' params ')' statement {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = NODE_FUNC_VOID;
+							$$->type = NODE_FUNC;
+							$$->data.type = TYPE_VOID;
 							$$->data.name = strdup($1->value.str_val);
 							ast_add_child($$, 0, $3);
 							ast_add_child($$, 1, $5);
@@ -404,38 +350,10 @@ paramTypeList			: typeSpecifier paramIdList {
 							while (node != NULL) {
 								decl = ast_create_node();
 								decl->lineno = node->lineno;
+								decl->type = NODE_PARAM;
 								decl->data.name = strdup(node->data.name);
-
-								switch ($1->data.token_class) {
-									case BOOL:
-										if (node->data.is_array) {
-											decl->type = NODE_PARAM_BOOL_ARRAY;
-										} else {
-											decl->type = NODE_PARAM_BOOL;
-										}
-										break;
-									case CHAR:
-										if (node->data.is_array) {
-											decl->type = NODE_PARAM_CHAR_ARRAY;
-										} else {
-											decl->type = NODE_PARAM_CHAR;
-										}
-										break;
-									case INT:
-										if (node->data.is_array) {
-											decl->type = NODE_PARAM_INT_ARRAY;
-										} else {
-											decl->type = NODE_PARAM_INT;
-										}
-										break;
-									case RECTYPE:
-										if (node->data.is_array) {
-											decl->type = NODE_PARAM_REC_ARRAY;
-										} else {
-											decl->type = NODE_PARAM_REC;
-										}
-										break;
-								}
+								decl->data.type = node->data.type;
+								decl->data.is_array = node->data.is_array;
 
 								if (node->child[0]) {
 									ast_add_child(decl, 0, node->child[0]);
@@ -922,19 +840,22 @@ argList					: argList ',' expression {
 constant				: NUMCONST {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = NODE_CONST_INT;
+							$$->type = NODE_CONST;
+							$$->data.type = TYPE_INT;
 							$$->data.int_val = $1->value.int_val;
 						}
 						| CHARCONST {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = NODE_CONST_CHAR;
+							$$->type = NODE_CONST;
+							$$->data.type = TYPE_CHAR;
 							$$->data.char_val = $1->value.char_val;
 						}
 						| BOOLCONST {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = NODE_CONST_BOOL;
+							$$->type = NODE_CONST;
+							$$->data.type = TYPE_BOOL;
 							$$->data.bool_val = $1->value.int_val;
 						}
 						;

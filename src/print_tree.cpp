@@ -68,30 +68,24 @@ void _ast_print_data(ast_t* node) {
 		case NODE_COMPOUND:
 			fprintf(stdout, "Compound");
 			break;
-		case NODE_CONST_BOOL:
-			fprintf(stdout, "Const: %s",
-				node->data.bool_val ? "true" : "false");
+		case NODE_CONST:
+			fprintf(stdout, "Const: ");
+			switch (node->data.type) {
+				case TYPE_BOOL:
+					fprintf(stdout, "%s",
+						node->data.bool_val ? "true" : "false");
+					break;
+				case TYPE_CHAR:
+					fprintf(stdout, "%c", node->data.char_val);
+					break;
+				case TYPE_INT:
+					fprintf(stdout, "%i", node->data.int_val);
+					break;
+			}
 			break;
-		case NODE_CONST_CHAR:
-			fprintf(stdout, "Const: '%c'", node->data.char_val);
-			break;
-		case NODE_CONST_INT:
-			fprintf(stdout, "Const: %i", node->data.int_val);
-			break;
-		case NODE_FUNC_BOOL:
-			fprintf(stdout, "Func %s returns type bool", node->data.name);
-			break;
-		case NODE_FUNC_CHAR:
-			fprintf(stdout, "Func %s returns type char", node->data.name);
-			break;
-		case NODE_FUNC_INT:
-			fprintf(stdout, "Func %s returns type int", node->data.name);
-			break;
-		case NODE_FUNC_REC:
-			fprintf(stdout, "Func %s returns type record", node->data.name);
-			break;
-		case NODE_FUNC_VOID:
-			fprintf(stdout, "Func %s returns type void", node->data.name);
+		case NODE_FUNC:
+			fprintf(stdout, "Func %s returns type %s", node->data.name,
+				type_string(node->data.type));
 			break;
 		case NODE_ID:
 			fprintf(stdout, "Id: %s", node->data.name);
@@ -104,30 +98,10 @@ void _ast_print_data(ast_t* node) {
 		case NODE_OP:
 			fprintf(stdout, "Op: %s", node->data.name);
 			break;
-		case NODE_PARAM_BOOL:
-			fprintf(stdout, "Param %s of type bool", node->data.name);
-			break;
-		case NODE_PARAM_CHAR:
-			fprintf(stdout, "Param %s of type char", node->data.name);
-			break;
-		case NODE_PARAM_INT:
-			fprintf(stdout, "Param %s of type int", node->data.name);
-			break;
-		case NODE_PARAM_REC:
-			fprintf(stdout, "Param %s of type record", node->data.name);
-			break;
-		case NODE_PARAM_BOOL_ARRAY:
-			fprintf(stdout, "Param %s is array of type bool", node->data.name);
-			break;
-		case NODE_PARAM_CHAR_ARRAY:
-			fprintf(stdout, "Param %s is array of type char", node->data.name);
-			break;
-		case NODE_PARAM_INT_ARRAY:
-			fprintf(stdout, "Param %s is array of type int", node->data.name);
-			break;
-		case NODE_PARAM_REC_ARRAY:
-			fprintf(stdout, "Param %s is array of type record",
-				node->data.name);
+		case NODE_PARAM:
+			fprintf(stdout, "Param %s ", node->data.name);
+			if (node->data.is_array) fprintf(stdout, "is array ");
+			fprintf(stdout, "of type %s", type_string(node->data.type));
 			break;
 		case NODE_RECORD:
 			fprintf(stdout, "Record %s ", node->data.name);
@@ -135,44 +109,25 @@ void _ast_print_data(ast_t* node) {
 		case NODE_RETURN:
 			fprintf(stdout, "Return");
 			break;
-		case NODE_TOKEN_CHAR:
-			fprintf(stdout, "Token %s of value %c",
-				node->data.name, node->data.char_val);
+		case NODE_TOKEN:
+			fprintf(stdout, "Token %s ", node->data.name);
+			switch(node->data.type) {
+				case TYPE_CHAR:
+					fprintf(stdout, "of value %c", node->data.char_val);
+					break;
+				case TYPE_INT:
+					fprintf(stdout, "of value %i", node->data.int_val);
+					break;
+				case TYPE_STR:
+					fprintf(stdout, "of value \"%c\"", node->data.str_val);
+					break;
+			}
 			break;
-		case NODE_TOKEN_INT:
-			fprintf(stdout, "Token %s of value %i",
-				node->data.name, node->data.int_val);
+		case NODE_VAR:
+			fprintf(stdout, "Var %s ", node->data.name);
+			if (node->data.is_array) fprintf(stdout, "is array ");
+			fprintf(stdout, "of type %s", type_string(node->data.type));
 			break;
-		case NODE_TOKEN_NONE:
-			fprintf(stdout, "Token %s", node->data.name);
-			break;
-		case NODE_TOKEN_STR:
-			fprintf(stdout, "Token %s of value %s",
-				node->data.name, node->data.str_val);
-			break;
-		case NODE_VAR_BOOL:
-			fprintf(stdout, "Var %s of type bool", node->data.name);
-			break;
-		case NODE_VAR_CHAR:
-			fprintf(stdout, "Var %s of type char", node->data.name);
-			break;
-		case NODE_VAR_INT:
-			fprintf(stdout, "Var %s of type int", node->data.name);
-			break;
-		case NODE_VAR_REC:
-			fprintf(stdout, "Var %s of type record", node->data.name);
-			break;
-		case NODE_VAR_BOOL_ARRAY:
-			fprintf(stdout, "Var %s is array of type bool", node->data.name);
-			break;
-		case NODE_VAR_CHAR_ARRAY:
-			fprintf(stdout, "Var %s is array of type char", node->data.name);
-			break;
-		case NODE_VAR_INT_ARRAY:
-			fprintf(stdout, "Var %s is array of type int", node->data.name);
-			break;
-		case NODE_VAR_REC_ARRAY:
-			fprintf(stdout, "Var %s is array of type record", node->data.name);
 		case NODE_WHILE:
 			fprintf(stdout, "While");
 			break;
