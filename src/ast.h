@@ -59,5 +59,6 @@ void ast_add_sibling(ast_t* root, ast_t* sibling);
 void ast_add_child(ast_t* root, int index, ast_t* child);
 ast_t* ast_create_node();
 ast_t* ast_from_token(token_t* tok);
+const char* ast_type_string(ast_type_t type);
 
 #endif /* _AST_H_ */

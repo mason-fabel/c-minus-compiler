@@ -5,6 +5,7 @@
 #include "getopt.h"
 #include "print_tree.h"
 #include "semantic.h"
+#include "symtab.h"
 
 #define FALSE 0
 #define TRUE 1
@@ -15,6 +16,7 @@ extern int yyparse(void);
 extern int yydebug;
 extern int optind;
 extern ast_t* syntax_tree;
+extern SymbolTable sem_symtab;
 
 int warnings;
 int errors;
@@ -56,7 +58,11 @@ int main(int argc, char** argv) {
 			break;
 	}
 
-	if (flags.debug) yydebug = 1;
+	if (flags.debug) {
+		yydebug = 1;
+		sem_symtab.debug(true);
+	}
+
 	yyparse();
 
 	if (flags.print_ast) ast_print(syntax_tree, FALSE);

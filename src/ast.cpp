@@ -91,3 +91,20 @@ void ast_add_child(ast_t* root, int index, ast_t* child) {
 
 	return;
 }
+
+const char* ast_type_string(ast_type_t type) {
+	switch(type) {
+		case TYPE_BOOL:
+			return "type bool";
+		case TYPE_CHAR:
+			return "type char";
+		case TYPE_INT:
+			return "type int";
+		case TYPE_VOID:
+			return "type void";
+		case TYPE_NONE:
+			return "undefined type";
+	}
+
+	return "";
+}

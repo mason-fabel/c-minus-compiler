@@ -179,7 +179,7 @@ varDeclaration			: typeSpecifier varDeclList ';' {
 								decl->lineno = node->lineno;
 								decl->type = NODE_VAR;
 								decl->data.name = strdup(node->data.name);
-								decl->data.type = node->data.type;
+								decl->data.type = $1->data.type;
 								decl->data.is_array = node->data.is_array;
 
 								if (node->child[0]) {
@@ -209,7 +209,7 @@ scopedVarDeclaration	: scopedTypeSpecifier varDeclList ';' {
 								decl->lineno = node->lineno;
 								decl->data.name = strdup(node->data.name);
 								decl->type = NODE_VAR;
-								decl->data.type = node->data.type;
+								decl->data.type = $1->data.type;
 								decl->data.is_array = node->data.is_array;
 
 								if (node->child[0]) {
@@ -273,17 +273,21 @@ typeSpecifier			: returnTypeSpecifier {
 						}
 						| RECTYPE {
 							$$ = ast_from_token($1);
+							$$->data.type = TYPE_RECORD;
 						}
 						;
 
 returnTypeSpecifier		: INT {
 							$$ = ast_from_token($1);
+							$$->data.type = TYPE_INT;
 						}
 						| BOOL {
 							$$ = ast_from_token($1);
+							$$->data.type = TYPE_BOOL;
 						}
 						| CHAR {
 							$$ = ast_from_token($1);
+							$$->data.type = TYPE_CHAR;
 						}
 						;
 
@@ -352,7 +356,7 @@ paramTypeList			: typeSpecifier paramIdList {
 								decl->lineno = node->lineno;
 								decl->type = NODE_PARAM;
 								decl->data.name = strdup(node->data.name);
-								decl->data.type = node->data.type;
+								decl->data.type = $1->data.type;
 								decl->data.is_array = node->data.is_array;
 
 								if (node->child[0]) {
@@ -471,6 +475,7 @@ compoundStmt			: '{' localDeclarations statementList '}' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = NODE_COMPOUND;
+							$$->data.type = TYPE_VOID;
 							ast_add_child($$, 0, $2);
 							ast_add_child($$, 1, $3);
 						}
@@ -517,11 +522,13 @@ returnStmt				: RETURN ';' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = NODE_RETURN;
+							$$->data.type = TYPE_VOID;
 						}
 						| RETURN expression ';' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = NODE_RETURN;
+							$$->data.type = TYPE_VOID;
 							ast_add_child($$, 0, $2);
 						}
 						;

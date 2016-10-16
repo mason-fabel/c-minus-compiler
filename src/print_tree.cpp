@@ -5,7 +5,6 @@
 
 void _ast_print(ast_t* node, int level, int sibling_num, int child_num);
 void _ast_print_data(ast_t* node);
-const char* type_string(ast_type_t type);
 
 typedef struct {
 	int aug;
@@ -40,7 +39,7 @@ void _ast_print(ast_t* node, int level, int sibling_num, int child_num) {
 
 	_ast_print_data(node);
 
-	if (opts.aug) fprintf(stdout, " [type %s]", type_string(node->data.type));
+	if (opts.aug) fprintf(stdout, " [%s]", ast_type_string(node->data.type));
 
 	fprintf(stdout, " [line: %i]", node->lineno);
 	fprintf(stdout, "\n");
@@ -84,8 +83,8 @@ void _ast_print_data(ast_t* node) {
 			}
 			break;
 		case NODE_FUNC:
-			fprintf(stdout, "Func %s returns type %s", node->data.name,
-				type_string(node->data.type));
+			fprintf(stdout, "Func %s returns %s", node->data.name,
+				ast_type_string(node->data.type));
 			break;
 		case NODE_ID:
 			fprintf(stdout, "Id: %s", node->data.name);
@@ -101,7 +100,7 @@ void _ast_print_data(ast_t* node) {
 		case NODE_PARAM:
 			fprintf(stdout, "Param %s ", node->data.name);
 			if (node->data.is_array) fprintf(stdout, "is array ");
-			fprintf(stdout, "of type %s", type_string(node->data.type));
+			fprintf(stdout, "of %s", ast_type_string(node->data.type));
 			break;
 		case NODE_RECORD:
 			fprintf(stdout, "Record %s ", node->data.name);
@@ -126,7 +125,7 @@ void _ast_print_data(ast_t* node) {
 		case NODE_VAR:
 			fprintf(stdout, "Var %s ", node->data.name);
 			if (node->data.is_array) fprintf(stdout, "is array ");
-			fprintf(stdout, "of type %s", type_string(node->data.type));
+			fprintf(stdout, "of %s", ast_type_string(node->data.type));
 			break;
 		case NODE_WHILE:
 			fprintf(stdout, "While");
@@ -136,21 +135,4 @@ void _ast_print_data(ast_t* node) {
 	}
 
 	return;
-}
-
-const char* type_string(ast_type_t type) {
-	switch(type) {
-		case TYPE_BOOL:
-			return "bool";
-		case TYPE_CHAR:
-			return "char";
-		case TYPE_INT:
-			return "int";
-		case TYPE_VOID:
-			return "void";
-		case TYPE_NONE:
-			return "unknown";
-	}
-
-	return "";
 }
