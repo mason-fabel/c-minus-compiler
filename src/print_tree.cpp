@@ -75,7 +75,7 @@ void _ast_print_data(ast_t* node) {
 						node->data.bool_val ? "true" : "false");
 					break;
 				case TYPE_CHAR:
-					fprintf(stdout, "%c", node->data.char_val);
+					fprintf(stdout, "'%c'", node->data.char_val);
 					break;
 				case TYPE_INT:
 					fprintf(stdout, "%i", node->data.int_val);

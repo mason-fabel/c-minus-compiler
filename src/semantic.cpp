@@ -129,17 +129,6 @@ void check_node(ast_t* node) {
 			}
 			break;
 		case NODE_OP:
-			error = 0;
-			lhs = (node->child[0])->data.type;
-			rhs = (node->child[1])->data.type;
-			if (lhs != TYPE_INT && lhs != TYPE_NONE) error = 1;
-			if (rhs != TYPE_INT && rhs != TYPE_NONE) error = 1;
-			if (error) {
-				errors++;
-				fprintf(stdout, "ERROR(%i): ", node->lineno);
-				fprintf(stdout,"'%s' requires both operants to be int.\n",
-					node->data.name);
-			}
 			switch (node->data.op) {
 				case OP_SUBSC:
 					if (!(node->child[0])->data.is_array) {
@@ -151,6 +140,28 @@ void check_node(ast_t* node) {
 								(node->child[0])->data.name);
 						}
 						fprintf(stdout, ".\n");
+					}
+					rhs = (node->child[1])->data.type;
+					if (rhs != TYPE_INT && rhs != TYPE_NONE) {
+						errors++;
+						fprintf(stdout, "ERROR(%i): ", node->lineno);
+						fprintf(stdout, "Array '%s' should be indexed by ",
+							(node->child[0])->data.name);
+						fprintf(stdout, "type int but got %s.\n",
+							ast_type_string(rhs));
+					}
+					break;
+				default:
+					error = 0;
+					lhs = (node->child[0])->data.type;
+					rhs = (node->child[1])->data.type;
+					if (lhs != TYPE_INT && lhs != TYPE_NONE) error = 1;
+					if (rhs != TYPE_INT && rhs != TYPE_NONE) error = 1;
+					if (error) {
+						errors++;
+						fprintf(stdout, "ERROR(%i): ", node->lineno);
+						fprintf(stdout,"'%s' requires both operants to be int.\n",
+							node->data.name);
 					}
 			}
 			break;
