@@ -118,7 +118,7 @@ void _ast_print_data(ast_t* node) {
 					fprintf(stdout, "of value %i", node->data.int_val);
 					break;
 				case TYPE_STR:
-					fprintf(stdout, "of value \"%c\"", node->data.str_val);
+					fprintf(stdout, "of value \"%s\"", node->data.str_val);
 					break;
 			}
 			break;

@@ -4,7 +4,7 @@ OBJ := $(addprefix obj/,$(notdir $(SRC:.cpp=.o))) obj/scanner.o obj/parser.o
 BIN := c-
 
 BFLAGS := --verbose --report=all -Wall -Werror
-CFLAGS := -Wall -Wextra -DYYDEBUG
+CFLAGS := -Wall -Wextra -Wno-switch -DYYDEBUG
 LFLAGS := $(CFLAGS)
 
 .PHONY : clean test
