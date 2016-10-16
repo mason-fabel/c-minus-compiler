@@ -26,7 +26,8 @@ int main(int argc, char** argv) {
 	char c;
 
 	/* Set default values */
-	flags.debug = 0;
+	flags.yydebug = 0;
+	flags.symtab_debug = 0;
 	flags.print_ast = 0;
 	flags.print_aug_ast = 0;
 	warnings = 0;
@@ -34,10 +35,13 @@ int main(int argc, char** argv) {
 
 
 	/* Read command line options */
-	while ((c = getopt(argc, argv, (char*) "dpP")) != -1) {
+	while ((c = getopt(argc, argv, (char*) "dDpP")) != -1) {
 		switch (c) {
 			case 'd':
-				flags.debug = 1;
+				flags.yydebug = 1;
+				break;
+			case 'D':
+				flags.symtab_debug = 1;
 				break;
 			case 'p':
 				flags.print_ast = 1;
@@ -58,10 +62,8 @@ int main(int argc, char** argv) {
 			break;
 	}
 
-	if (flags.debug) {
-		yydebug = 1;
-		sem_symtab.debug(true);
-	}
+	if (flags.yydebug) yydebug = 1;
+	if (flags.symtab_debug) sem_symtab.debug(true);
 
 	yyparse();
 

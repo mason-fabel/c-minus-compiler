@@ -545,6 +545,7 @@ expression				: mutable '=' expression {
 							$$->lineno = $2->lineno;
 							$$->type = NODE_ASSIGN;
 							$$->data.name = strdup($2->input);
+							$$->data.op = OP_ASS,
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
@@ -553,6 +554,7 @@ expression				: mutable '=' expression {
 							$$->lineno = $2->lineno;
 							$$->type = NODE_ASSIGN;
 							$$->data.name = strdup($2->input);
+							$$->data.op = OP_ADDASS,
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
@@ -561,6 +563,7 @@ expression				: mutable '=' expression {
 							$$->lineno = $2->lineno;
 							$$->type = NODE_ASSIGN;
 							$$->data.name = strdup($2->input);
+							$$->data.op = OP_SUBASS,
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
@@ -569,6 +572,7 @@ expression				: mutable '=' expression {
 							$$->lineno = $2->lineno;
 							$$->type = NODE_ASSIGN;
 							$$->data.name = strdup($2->input);
+							$$->data.op = OP_MULASS,
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
@@ -577,6 +581,7 @@ expression				: mutable '=' expression {
 							$$->lineno = $2->lineno;
 							$$->type = NODE_ASSIGN;
 							$$->data.name = strdup($2->input);
+							$$->data.op = OP_DIVASS,
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
@@ -585,6 +590,7 @@ expression				: mutable '=' expression {
 							$$->lineno = $2->lineno;
 							$$->type = NODE_ASSIGN;
 							$$->data.name = strdup($2->input);
+							$$->data.op = OP_INC,
 							ast_add_child($$, 0, $1);
 						}
 						| mutable DEC {
@@ -592,6 +598,7 @@ expression				: mutable '=' expression {
 							$$->lineno = $2->lineno;
 							$$->type = NODE_ASSIGN;
 							$$->data.name = strdup($2->input);
+							$$->data.op = OP_DEC,
 							ast_add_child($$, 0, $1);
 						}
 						| simpleExpression {
@@ -604,6 +611,7 @@ simpleExpression		: simpleExpression OR andExpression {
 							$$->lineno = $2->lineno;
 							$$->type = NODE_OP;
 							$$->data.name = strdup($2->input);
+							$$->data.op = OP_OR,
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
@@ -617,6 +625,7 @@ andExpression			: andExpression AND unaryRelExpression {
 							$$->lineno = $2->lineno;
 							$$->type = NODE_OP;
 							$$->data.name = strdup($2->input);
+							$$->data.op = OP_AND;
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
@@ -630,6 +639,7 @@ unaryRelExpression		: NOT unaryRelExpression {
 							$$->lineno = $1->lineno;
 							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
+							$$->data.op = OP_NOT;
 							ast_add_child($$, 0, $2);
 						}
 						| relExpression {
@@ -652,36 +662,42 @@ relop					: LESSEQ {
 							$$->lineno = $1->lineno;
 							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
+							$$->data.op = OP_LESSEQ;
 						}
 						| '<' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
+							$$->data.op = OP_LESS;
 						}
 						| '>' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
+							$$->data.op = OP_GRT;
 						}
 						| GRTEQ {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
+							$$->data.op = OP_GRTEQ;
 						}
 						| EQ {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
+							$$->data.op = OP_EQ;
 						}
 						| NOTEQ {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
+							$$->data.op = OP_NOTEQ;
 						}
 						;
 
@@ -700,12 +716,14 @@ sumop					: '+' {
 							$$->lineno = $1->lineno;
 							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
+							$$->data.op = OP_ADD;
 						}
 						| '-' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
+							$$->data.op = OP_SUB;
 						}
 						;
 
@@ -724,18 +742,21 @@ mulop					: '*' {
 							$$->lineno = $1->lineno;
 							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
+							$$->data.op = OP_STAR;
 						}
 						| '/' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
+							$$->data.op = OP_DIV;
 						}
 						| '%' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
+							$$->data.op = OP_MOD;
 						}
 						;
 
@@ -753,18 +774,21 @@ unaryop					: '-' {
 							$$->lineno = $1->lineno;
 							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
+							$$->data.op = OP_SUB;
 						}
 						| '*' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
+							$$->data.op = OP_STAR;
 						}
 						| '?' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
+							$$->data.op = OP_QMARK;
 						}
 						;
 
@@ -787,6 +811,7 @@ mutable					: ID {
 							$$->lineno = $2->lineno;
 							$$->type = NODE_OP;
 							$$->data.name = strdup($2->input);
+							$$->data.op = OP_SUBSC;
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
@@ -797,6 +822,7 @@ mutable					: ID {
 							$$->lineno = $2->lineno;
 							$$->type = NODE_OP;
 							$$->data.name = strdup($2->input);
+							$$->data.op = OP_DOT;
 
 							id = ast_create_node();
 							id->lineno = $3->lineno;

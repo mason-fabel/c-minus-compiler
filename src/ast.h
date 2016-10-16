@@ -34,11 +34,41 @@ typedef enum {
 	TYPE_VOID,
 } ast_type_t;
 
+typedef enum {
+	OP_ADD,
+	OP_ADDASS,
+	OP_AND,
+	OP_ASS,
+	OP_DEC,
+	OP_DIV,
+	OP_DIVASS,
+	OP_DOT,
+	OP_EQ,
+	OP_GRT,
+	OP_GRTEQ,
+	OP_INC,
+	OP_LESS,
+	OP_LESSEQ,
+	OP_MOD,
+	OP_MULASS,
+	OP_NONE,
+	OP_NOT,
+	OP_NOTEQ,
+	OP_QMARK,
+	OP_OR,
+	OP_STAR,
+	OP_SUB,
+	OP_SUBASS,
+	OP_SUBSC,
+} ast_op_t;
+
 typedef struct {
 	char* name;
 	ast_type_t type;
+	ast_op_t op;
 	int token_class;
 	int is_array;
+	int is_func_body;
 	int bool_val;
 	int int_val;
 	char char_val;

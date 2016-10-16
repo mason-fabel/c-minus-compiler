@@ -52,23 +52,42 @@ void pre_action(ast_t* node) {
 	ast_t* def;
 
 	switch (node->type) {
+		case NODE_CALL:
+			def = (ast_t*) sem_symtab.lookup(std::string(node->data.name));
+			if (def != NULL) node->data.type = def->data.type;
+			break;
 		case NODE_COMPOUND:
 			msg = (char*) malloc(sizeof(char) * 30);
 			sprintf(msg, "compound stmt %i", node->lineno);
-			sem_symtab.enter(std::string(msg));
+			if (!node->data.is_func_body) sem_symtab.enter(std::string(msg));
+			break;
+		case NODE_IF:
+			node->data.type = TYPE_VOID;
 			break;
 		case NODE_FUNC:
+			(node->child[1])->data.is_func_body = 1;
 			sem_symtab.insert(node->data.name, node);
+			msg = (char*) malloc(sizeof(char) * 30);
+			sprintf(msg, "function %s", node->data.name);
+			sem_symtab.enter(std::string(msg));
 			break;
 		case NODE_ID:
 			def = (ast_t*) sem_symtab.lookup(std::string(node->data.name));
-			if (def != NULL) {
-				/* Don't type IDs that reference functions */
-				if (def->type != NODE_FUNC) node->data.type = def->data.type;
+			if (def != NULL && def->type != NODE_FUNC) {
+				node->data.type = def->data.type;
+				node->data.is_array = def->data.is_array;
 			}
 			break;
+		case NODE_PARAM:
+			def = (ast_t*) sem_symtab.lookup(std::string(node->data.name));
+			if (def == NULL) sem_symtab.insert(node->data.name, node);
+			break;
 		case NODE_VAR:
-			sem_symtab.insert(node->data.name, node);
+			def = (ast_t*) sem_symtab.lookup(std::string(node->data.name));
+			if (def == NULL) sem_symtab.insert(node->data.name, node);
+			break;
+		case NODE_WHILE:
+			node->data.type = TYPE_VOID;
 			break;
 	}
 
@@ -120,8 +139,21 @@ void check_node(ast_t* node) {
 			if (error) {
 				errors++;
 				fprintf(stdout, "ERROR(%i): ", node->lineno);
-				fprintf(stdout, "'%s' requires both operants to be int.\n",
+				fprintf(stdout,"'%s' requires both operants to be int.\n",
 					node->data.name);
+			}
+			switch (node->data.op) {
+				case OP_SUBSC:
+					if (!(node->child[0])->data.is_array) {
+						errors++;
+						fprintf(stdout, "ERROR(%i): ", node->lineno);
+						fprintf(stdout, "Cannot index nonarray");
+						if ((node->child[0])->type == NODE_ID) {
+						 	fprintf(stdout, " '%s'",
+								(node->child[0])->data.name);
+						}
+						fprintf(stdout, ".\n");
+					}
 			}
 			break;
 	}
@@ -135,7 +167,22 @@ void post_action(ast_t* node) {
 			node->data.type = (node->child[0])->data.type;
 			break;
 		case NODE_COMPOUND:
+			if (!node->data.is_func_body) sem_symtab.leave();
+			break;
+		case NODE_FUNC:
 			sem_symtab.leave();
+			break;
+		case NODE_OP:
+			switch (node->data.op) {
+				case OP_LESS:
+				case OP_LESSEQ:
+				case OP_GRT:
+				case OP_GRTEQ:
+					node->data.type = TYPE_BOOL;
+					break;
+				default:
+					node->data.type = (node->child[0])->data.type;
+			}
 			break;
 	}
 
