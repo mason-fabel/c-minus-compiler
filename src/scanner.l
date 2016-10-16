@@ -66,7 +66,7 @@ void scanner_use_file(char* fname) {
 
 	fin = fopen(fname, "r");
 	if (fin == NULL) {
-		fprintf(stderr, "unable to open file: %s\n", fname);
+		fprintf(stdout, "ERROR(ARGLIST): source file \"%s\" could not be opened.\n", fname);
 		exit(1);
 	}
 

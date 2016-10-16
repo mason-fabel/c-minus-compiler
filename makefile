@@ -35,7 +35,7 @@ TESTS := test-basic test-everything test-exp test-exp2 test-init test-record tes
 
 test : test-regression
 
-test-regression : test-tiny test-small
+test-regression : test-tiny test-small test-whileif test-z test-tinyscope
 
 test-all : $(TESTS)
 

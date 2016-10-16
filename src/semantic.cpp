@@ -79,12 +79,10 @@ void pre_action(ast_t* node) {
 			}
 			break;
 		case NODE_PARAM:
-			def = (ast_t*) sem_symtab.lookup(std::string(node->data.name));
-			if (def == NULL) sem_symtab.insert(node->data.name, node);
+			sem_symtab.insert(node->data.name, node);
 			break;
 		case NODE_VAR:
-			def = (ast_t*) sem_symtab.lookup(std::string(node->data.name));
-			if (def == NULL) sem_symtab.insert(node->data.name, node);
+			sem_symtab.insert(node->data.name, node);
 			break;
 		case NODE_WHILE:
 			node->data.type = TYPE_VOID;
