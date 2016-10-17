@@ -9,6 +9,18 @@ void pre_action(ast_t* node);
 void post_action(ast_t* node);
 void check_node(ast_t* node);
 
+void binop_no_array(ast_t* node);
+void binop_only_array(ast_t* node);
+void binop_only_int(ast_t* node);
+void binop_same_type(ast_t* node);
+void id_defined(ast_t* node);
+void id_not_func(ast_t* node);
+void index_only_array(ast_t* node);
+void index_only_int(ast_t* node);
+void unary_only_array(ast_t* node);
+
+void error_lineno(ast_t* node);
+
 extern int errors;
 extern int warnings;
 
@@ -20,7 +32,7 @@ void sem_analysis(ast_t* tree) {
 	_sem_type(tree);
 
 	def = (ast_t*) sem_symtab.lookupGlobal("main");
-	if (!(def != NULL && def->type == NODE_FUNC)) {
+	if (def == NULL || def->type != NODE_FUNC) {
 		errors++;
 		fprintf(stdout, "ERROR(LINKER): Procedure main is not defined.\n");
 	}
@@ -52,6 +64,9 @@ void pre_action(ast_t* node) {
 	ast_t* def;
 
 	switch (node->type) {
+		case NODE_BREAK:
+			node->data.type = TYPE_VOID;
+			break;
 		case NODE_CALL:
 			def = (ast_t*) sem_symtab.lookup(std::string(node->data.name));
 			if (def != NULL) node->data.type = def->data.type;
@@ -92,99 +107,6 @@ void pre_action(ast_t* node) {
 	return;
 }
 
-void check_node(ast_t* node) {
-	int error;
-	ast_type_t lhs;
-	ast_type_t rhs;
-	ast_t* def;
-
-	switch (node->type) {
-		case NODE_ASSIGN:
-			error = 0;
-			lhs = node->child[0] ? (node->child[0])->data.type : TYPE_NONE;
-			rhs = node->child[1] ? (node->child[1])->data.type : TYPE_NONE;
-			if (lhs != rhs) error = 1;
-			if (error && (lhs == TYPE_NONE || rhs == TYPE_NONE)) error = 0;
-			if (error) {
-				errors++;
-				fprintf(stdout, "ERROR(%i): ", node->lineno);
-				fprintf(stdout, "'%s' requires operands of the same type but ",
-					node->data.name);
-				fprintf(stdout, "lhs is %s and rhs is %s.\n",
-					ast_type_string(lhs), ast_type_string(rhs));
-			}
-			break;
-		case NODE_ID:
-			def = (ast_t*) sem_symtab.lookup(std::string(node->data.name));
-			if (def == NULL) {
-				errors++;
-				fprintf(stdout, "ERROR(%i): ", node->lineno);
-				fprintf(stdout, "Symbol '%s' is not defined.\n",
-					node->data.name);
-			} else if (def->type == NODE_FUNC) {
-				errors++;
-				fprintf(stdout, "ERROR(%i): ", node->lineno);
-				fprintf(stdout, "Cannot use function '%s' as a variable.\n",
-					node->data.name);
-			}
-			break;
-		case NODE_OP:
-			switch (node->data.op) {
-				case OP_SIZE:
-					if (!(node->child[0])->data.is_array) {
-						errors++;
-						fprintf(stdout, "ERROR(%i): ", node->lineno);
-						fprintf(stdout, "The operation '%s' only works with arrays.\n", node->data.name);
-					}
-					break;
-				case OP_SUBSC:
-					if (!(node->child[0])->data.is_array) {
-						errors++;
-						fprintf(stdout, "ERROR(%i): ", node->lineno);
-						fprintf(stdout, "Cannot index nonarray");
-						if ((node->child[0])->type == NODE_ID) {
-						 	fprintf(stdout, " '%s'",
-								(node->child[0])->data.name);
-						}
-						fprintf(stdout, ".\n");
-					}
-					rhs = (node->child[1])->data.type;
-					if (rhs != TYPE_INT && rhs != TYPE_NONE) {
-						errors++;
-						fprintf(stdout, "ERROR(%i): ", node->lineno);
-						fprintf(stdout, "Array '%s' should be indexed by ",
-							(node->child[0])->data.name);
-						fprintf(stdout, "type int but got %s.\n",
-							ast_type_string(rhs));
-					}
-					break;
-				default:
-					error = 0;
-					lhs = node->child[0] ? (node->child[0])->data.type : TYPE_NONE;
-					rhs = node->child[1] ? (node->child[1])->data.type : TYPE_NONE;
-					if (lhs != TYPE_INT && lhs != TYPE_NONE) error = 1;
-					if (rhs != TYPE_INT && rhs != TYPE_NONE) error = 1;
-					if (error) {
-						errors++;
-						fprintf(stdout, "ERROR(%i): ", node->lineno);
-						fprintf(stdout,"'%s' requires both operants to be int.\n",
-							node->data.name);
-					}
-					error = 0;
-					if ((node->child[0])->data.is_array) error = 1;
-					if ((node->child[1])->data.is_array) error = 1;
-					if (error) {
-						errors++;
-						fprintf(stdout, "ERROR(%i): ", node->lineno);
-						fprintf(stdout, "The operation '%s' does not work with arrays.\n", node->data.name);
-					}
-			}
-			break;
-	}
-
-	return;
-}
-
 void post_action(ast_t* node) {
 	switch (node->type) {
 		case NODE_ASSIGN:
@@ -209,6 +131,209 @@ void post_action(ast_t* node) {
 			}
 			break;
 	}
+
+	return;
+}
+
+void check_node(ast_t* node) {
+	switch (node->type) {
+		case NODE_ASSIGN:
+			binop_same_type(node);
+			break;
+		case NODE_ID:
+			id_defined(node);
+			id_not_func(node);
+			break;
+		case NODE_OP:
+			switch (node->data.op) {
+				case OP_SIZE:
+					unary_only_array(node);
+					break;
+				case OP_SUBSC:
+					index_only_array(node);
+					index_only_int(node);
+					break;
+				default:
+					binop_only_int(node);
+					binop_no_array(node);
+			}
+			break;
+	}
+
+	return;
+}
+
+void binop_no_array(ast_t* node) {
+	ast_t* lhs;
+	ast_t* rhs;
+
+	lhs = node->child[0];
+	rhs = node->child[1];
+
+	if ((lhs && lhs->data.is_array) || (rhs && rhs->data.is_array)) {
+		errors++;
+		fprintf(stdout, "ERROR(%i): ", node->lineno);
+		fprintf(stdout, "The operation '%s' does not work with arrays.\n",
+			node->data.name);
+	}
+
+	return;
+}
+
+void binop_only_array(ast_t* node) {
+	ast_t* lhs;
+	ast_t* rhs;
+
+	lhs = node->child[0];
+	rhs = node->child[1];
+
+	if (!lhs || !rhs) return;
+
+	if (!lhs->data.is_array || !rhs->data.is_array) {
+		errors++;
+		fprintf(stdout, "ERROR(%i): ", node->lineno);
+		fprintf(stdout, "The operation '%s' only works with arrays.\n",
+			node->data.name);
+	}
+
+	return;
+}
+
+void binop_only_int(ast_t* node) {
+	ast_t* lhs;
+	ast_t* rhs;
+
+	lhs = node->child[0];
+	rhs = node->child[1];
+
+	if (!lhs || !rhs) return;
+
+	if (lhs->data.type != TYPE_INT || rhs->data.type != TYPE_INT) {
+		errors++;
+		error_lineno(node);
+		fprintf(stdout, "'%s' requires both operants to be int.\n",
+			node->data.name);
+	}
+
+	return;
+}
+
+void binop_same_type(ast_t* node) {
+	ast_t* lhs;
+	ast_t* rhs;
+
+	lhs = node->child[0];
+	rhs = node->child[1];
+
+	if (!lhs || !rhs) return;
+
+	if (lhs->data.type == TYPE_NONE) return;
+	if (rhs->data.type == TYPE_NONE) return;
+
+	if (lhs->data.type != rhs->data.type) {
+		errors++;
+		error_lineno(node);
+		fprintf(stdout, "'%s' requires operands of the same type but ",
+			node->data.name);
+		fprintf(stdout, "lhs is %s and rhs is %s.\n",
+			ast_type_string(lhs->data.type), ast_type_string(rhs->data.type));
+	}
+
+	return;
+}
+
+void id_defined(ast_t* node) {
+	ast_t* def;
+
+	def = (ast_t*) sem_symtab.lookup(std::string(node->data.name));
+
+	if (!def) {
+		errors++;
+		error_lineno(node);
+		fprintf(stdout, "Symbol '%s' is not defined.\n", node->data.name);
+	}
+
+	return;
+}
+
+void id_not_func(ast_t* node) {
+	ast_t* def;
+
+	def = (ast_t*) sem_symtab.lookup(std::string(node->data.name));
+
+	if (!def) return;
+
+	if (def->type == NODE_FUNC) {
+		errors++;
+		error_lineno(node);
+		fprintf(stdout, "Cannot use function '%s' as a variable.\n",
+			node->data.name);
+	}
+
+	return;
+}
+
+void index_only_array(ast_t* node) {
+	ast_t* arr;
+
+	arr = node->child[0];
+
+	if (!arr) return;
+
+	if (!arr->data.is_array) {
+		errors++;
+		error_lineno(node);
+		fprintf(stdout, "Cannot index nonarray");
+		if (arr->type == NODE_ID) {
+			fprintf(stdout, " '%s'", arr->data.name);
+		}
+		fprintf(stdout, ".\n");
+	}
+
+	return;
+}
+
+void index_only_int(ast_t* node) {
+	ast_t* arg;
+
+	arg = node->child[1];
+
+	if (!arg) return;
+
+	if (arg->data.type != TYPE_INT && arg->data.type != TYPE_NONE) {
+		errors++;
+		error_lineno(node);
+		fprintf(stdout, "Array '%s' should be indexed by ",
+			(node->child[0])->data.name);
+		fprintf(stdout, "type int but got %s.\n",
+			ast_type_string(arg->data.type));
+	}
+
+	return;
+}
+
+void unary_only_array(ast_t* node) {
+	ast_t* arr;
+
+	arr = node->child[0];
+
+	if (!arr) return;
+
+	if (!arr->data.is_array) {
+		errors++;
+		error_lineno(node);
+		fprintf(stdout, "Cannot index nonarray");
+		if (arr->type == NODE_ID) {
+			fprintf(stdout, " '%s'", arr->data.name);
+		}
+		fprintf(stdout, ".\n");
+	}
+
+	return;
+}
+
+void error_lineno(ast_t* node) {
+	fprintf(stdout, "ERROR(%i): ", node->lineno);
 
 	return;
 }
