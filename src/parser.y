@@ -742,7 +742,7 @@ mulop					: '*' {
 							$$->lineno = $1->lineno;
 							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
-							$$->data.op = OP_STAR;
+							$$->data.op = OP_MUL;
 						}
 						| '/' {
 							$$ = ast_create_node();
@@ -781,7 +781,7 @@ unaryop					: '-' {
 							$$->lineno = $1->lineno;
 							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
-							$$->data.op = OP_STAR;
+							$$->data.op = OP_SIZE;
 						}
 						| '?' {
 							$$ = ast_create_node();

@@ -130,6 +130,13 @@ void check_node(ast_t* node) {
 			break;
 		case NODE_OP:
 			switch (node->data.op) {
+				case OP_SIZE:
+					if (!(node->child[0])->data.is_array) {
+						errors++;
+						fprintf(stdout, "ERROR(%i): ", node->lineno);
+						fprintf(stdout, "The operation '%s' only works with arrays.\n", node->data.name);
+					}
+					break;
 				case OP_SUBSC:
 					if (!(node->child[0])->data.is_array) {
 						errors++;
@@ -162,6 +169,14 @@ void check_node(ast_t* node) {
 						fprintf(stdout, "ERROR(%i): ", node->lineno);
 						fprintf(stdout,"'%s' requires both operants to be int.\n",
 							node->data.name);
+					}
+					error = 0;
+					if ((node->child[0])->data.is_array) error = 1;
+					if ((node->child[1])->data.is_array) error = 1;
+					if (error) {
+						errors++;
+						fprintf(stdout, "ERROR(%i): ", node->lineno);
+						fprintf(stdout, "The operation '%s' does not work with arrays.\n", node->data.name);
 					}
 			}
 			break;
