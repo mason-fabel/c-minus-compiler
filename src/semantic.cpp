@@ -57,7 +57,7 @@ void pre_action(ast_t* node) {
 			if (def != NULL) node->data.type = def->data.type;
 			break;
 		case NODE_COMPOUND:
-			msg = (char*) malloc(sizeof(char) * 30);
+			msg = (char*) malloc(sizeof(char) * 80);
 			sprintf(msg, "compound stmt %i", node->lineno);
 			if (!node->data.is_func_body) sem_symtab.enter(std::string(msg));
 			break;
@@ -65,9 +65,9 @@ void pre_action(ast_t* node) {
 			node->data.type = TYPE_VOID;
 			break;
 		case NODE_FUNC:
-			(node->child[1])->data.is_func_body = 1;
+			if (node->child[1]) (node->child[1])->data.is_func_body = 1;
 			sem_symtab.insert(node->data.name, node);
-			msg = (char*) malloc(sizeof(char) * 30);
+			msg = (char*) malloc(sizeof(char) * 80);
 			sprintf(msg, "function %s", node->data.name);
 			sem_symtab.enter(std::string(msg));
 			break;
@@ -101,8 +101,8 @@ void check_node(ast_t* node) {
 	switch (node->type) {
 		case NODE_ASSIGN:
 			error = 0;
-			lhs = (node->child[0])->data.type;
-			rhs = (node->child[1])->data.type;
+			lhs = node->child[0] ? (node->child[0])->data.type : TYPE_NONE;
+			rhs = node->child[1] ? (node->child[1])->data.type : TYPE_NONE;
 			if (lhs != rhs) error = 1;
 			if (error && (lhs == TYPE_NONE || rhs == TYPE_NONE)) error = 0;
 			if (error) {
@@ -153,8 +153,8 @@ void check_node(ast_t* node) {
 					break;
 				default:
 					error = 0;
-					lhs = (node->child[0])->data.type;
-					rhs = (node->child[1])->data.type;
+					lhs = node->child[0] ? (node->child[0])->data.type : TYPE_NONE;
+					rhs = node->child[1] ? (node->child[1])->data.type : TYPE_NONE;
 					if (lhs != TYPE_INT && lhs != TYPE_NONE) error = 1;
 					if (rhs != TYPE_INT && rhs != TYPE_NONE) error = 1;
 					if (error) {
