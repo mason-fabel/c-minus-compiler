@@ -18,6 +18,7 @@ void id_not_func(ast_t* node);
 void index_only_array(ast_t* node);
 void index_only_int(ast_t* node);
 void unary_only_array(ast_t* node);
+void unary_only_int(ast_t* node);
 
 void error_lineno(ast_t* node);
 
@@ -120,11 +121,17 @@ void post_action(ast_t* node) {
 			break;
 		case NODE_OP:
 			switch (node->data.op) {
+				case OP_EQ:
 				case OP_LESS:
 				case OP_LESSEQ:
 				case OP_GRT:
 				case OP_GRTEQ:
 					node->data.type = TYPE_BOOL;
+					break;
+				case OP_SIZE:
+				case OP_ADD:
+				case OP_SUB:
+					node->data.type = TYPE_INT;
 					break;
 				default:
 					node->data.type = (node->child[0])->data.type;
@@ -152,6 +159,16 @@ void check_node(ast_t* node) {
 				case OP_SUBSC:
 					index_only_array(node);
 					index_only_int(node);
+					break;
+				case OP_EQ:
+				case OP_NOTEQ:
+					binop_same_type(node);
+					break;
+				case OP_AND:
+				case OP_OR:
+				case OP_NOT:
+					binop_same_type(node);
+					binop_no_array(node);
 					break;
 				default:
 					binop_only_int(node);
@@ -322,11 +339,25 @@ void unary_only_array(ast_t* node) {
 	if (!arr->data.is_array) {
 		errors++;
 		error_lineno(node);
-		fprintf(stdout, "Cannot index nonarray");
-		if (arr->type == NODE_ID) {
-			fprintf(stdout, " '%s'", arr->data.name);
-		}
-		fprintf(stdout, ".\n");
+		fprintf(stdout, "The operation '%s' only works with arrays.\n",
+			node->data.name);
+	}
+
+	return;
+}
+
+void unary_only_int(ast_t* node) {
+	ast_t* arg;
+
+	arg = node->child[0];
+
+	if (!arg) return;
+
+	if (arg->data.type != TYPE_INT && arg->data.type != TYPE_NONE) {
+		errors++;
+		error_lineno(node);
+		fprintf(stdout, "The operation '%s' only works with arrays.\n",
+			node->data.name);
 	}
 
 	return;

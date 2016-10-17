@@ -58,7 +58,6 @@ typedef enum {
 	OP_QMARK,
 	OP_OR,
 	OP_SIZE,
-	OP_STAR,
 	OP_SUB,
 	OP_SUBASS,
 	OP_SUBSC,
