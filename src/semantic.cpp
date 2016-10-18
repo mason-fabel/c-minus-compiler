@@ -13,6 +13,7 @@ int binop_no_array(ast_t* node);
 int binop_no_void(ast_t* node);
 int binop_only_array(ast_t* node);
 int binop_only_bool(ast_t* node);
+int binop_only_char_or_int(ast_t* node);
 int binop_only_int(ast_t* node);
 int binop_same_type(ast_t* node);
 int id_defined(ast_t* node);
@@ -150,6 +151,7 @@ void post_action(ast_t* node) {
 				case OP_LESS:
 				case OP_LESSEQ:
 				case OP_NOT:
+				case OP_NOTEQ:
 				case OP_OR:
 					node->data.type = TYPE_BOOL;
 					break;
@@ -158,6 +160,7 @@ void post_action(ast_t* node) {
 				case OP_MOD:
 				case OP_MUL:
 				case OP_NEG:
+				case OP_QMARK:
 				case OP_SIZE:
 				case OP_SUB:
 					node->data.type = TYPE_INT;
@@ -208,13 +211,18 @@ void check_node(ast_t* node) {
 				case OP_EQ:
 				case OP_NOTEQ:
 					binop_same_type(node);
+					binop_no_void(node);
 					break;
 				case OP_GRT:
+				case OP_GRTEQ:
 				case OP_LESS:
+				case OP_LESSEQ:
 					binop_same_type(node);
+					binop_only_char_or_int(node);
 					binop_no_array(node);
 					break;
 				case OP_NEG:
+				case OP_QMARK:
 					unary_only_int(node);
 					unary_no_array(node);
 					break;
@@ -372,6 +380,41 @@ int binop_only_bool(ast_t* node) {
 	return pass;
 }
 
+int binop_only_char_or_int(ast_t* node) {
+	int pass;
+	ast_t* lhs;
+	ast_t* rhs;
+
+	lhs = node->child[0];
+	rhs = node->child[1];
+
+	if (!lhs || !rhs) return 0;
+
+	if (lhs->data.type != TYPE_CHAR && lhs->data.type != TYPE_INT
+		&& lhs->data.type != TYPE_NONE
+	) {
+		pass = 0;
+		error_lineno(node);
+		fprintf(stdout, "'%s' requires operands of type char or type int ",
+			node->data.name);
+		fprintf(stdout, "but lhs is of %s.\n",
+			ast_type_string(lhs->data.type));
+	}
+
+	if (rhs->data.type != TYPE_CHAR && rhs->data.type != TYPE_INT
+		&& rhs->data.type != TYPE_NONE
+	) {
+		pass = 0;
+		error_lineno(node);
+		fprintf(stdout, "'%s' requires operands of type char or type int ",
+			node->data.name);
+		fprintf(stdout, "but rhs is of %s.\n",
+			ast_type_string(rhs->data.type));
+	}
+
+	return pass;
+}
+
 int binop_same_type(ast_t* node) {
 	int pass;
 	ast_t* lhs;
@@ -404,7 +447,7 @@ int id_defined(ast_t* node) {
 
 	def = (ast_t*) sem_symtab.lookup(std::string(node->data.name));
 
-	pass = (int) def;
+	pass = def != NULL;
 
 	if (!pass) {
 		error_lineno(node);
