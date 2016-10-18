@@ -111,11 +111,6 @@ void pre_action(ast_t* node) {
 				error_symbol_defined(node);
 			}
 			break;
-		case NODE_VAR:
-			if (!sem_symtab.insert(node->data.name, node)) {
-				error_symbol_defined(node);
-			}
-			break;
 		case NODE_WHILE:
 			node->data.type = TYPE_VOID;
 			break;
@@ -167,6 +162,11 @@ void post_action(ast_t* node) {
 					break;
 				default:
 					node->data.type = (node->child[0])->data.type;
+			}
+			break;
+		case NODE_VAR:
+			if (!sem_symtab.insert(node->data.name, node)) {
+				error_symbol_defined(node);
 			}
 			break;
 	}
