@@ -7,6 +7,8 @@ BFLAGS := --verbose --report=all -Wall -Werror
 CFLAGS := -Wall -Wextra -Wno-switch -DYYDEBUG
 LFLAGS := $(CFLAGS)
 
+TESTS := test-basic test-everything test-exp test-exp2 test-init test-scope test-small test-tiny test-tinybad test-tinygood test-tinyscope test-tinytype test-whileif test-z
+
 .PHONY : clean test $(TESTS)
 
 $(BIN) : $(OBJ)
@@ -28,16 +30,10 @@ clean :
 	rm -rf $(OBJ)
 	rm -rf $(BIN)
 
-tar : test clean
+tar : clean
 	tar -cf fabe0940.tar makefile src obj
 
-TESTS := test-basic test-everything test-exp test-exp2 test-init test-record test-scope test-small test-tiny test-tinybad test-tinygood test-tinyscope test-tinytype test-whileif test-z
-
-test : test-regression
-
-test-regression : test-basic test-everything test-exp test-exp2 test-init test-scope test-small test-tiny test-tinybad test-tinygood test-tinyscope test-tinytype test-whileif test-z
-
-test-all : $(TESTS)
+test : $(TESTS)
 
 test-basic : $(BIN)
 	./$(BIN) -P test/basicAll4.c- | diff --width=190 -y - test/basicAll4.out | less
@@ -53,9 +49,6 @@ test-exp2 : $(BIN)
 
 test-init : $(BIN)
 	./$(BIN) -P test/init.c- | diff --width=190 -y - test/init.out | less
-
-test-record : $(BIN)
-	./$(BIN) -P test/record.c- | diff --width=190 -y - test/record.out | less
 
 test-scope : $(BIN)
 	./$(BIN) -P test/scope.c- | diff --width=190 -y - test/scope.out | less

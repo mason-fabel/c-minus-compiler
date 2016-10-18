@@ -217,8 +217,7 @@ void check_node(ast_t* node) {
 				case OP_GRTEQ:
 				case OP_LESS:
 				case OP_LESSEQ:
-					binop_same_type(node);
-					binop_only_char_or_int(node);
+					binop_only_char_or_int(node) && binop_same_type(node);
 					binop_no_array(node);
 					break;
 				case OP_NEG:
@@ -385,6 +384,7 @@ int binop_only_char_or_int(ast_t* node) {
 	ast_t* lhs;
 	ast_t* rhs;
 
+	pass = 1;
 	lhs = node->child[0];
 	rhs = node->child[1];
 
@@ -594,7 +594,7 @@ int unary_only_array(ast_t* node) {
 	arr = node->child[0];
 	if (!arr) return 0;
 
-	pass = arr->data.is_array;
+	pass = arr->data.type == TYPE_NONE || arr->data.is_array;
 
 	if (!pass) {
 		error_lineno(node);
