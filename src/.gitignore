@@ -1,0 +1,5 @@
+# Generated files
+scanner.cpp
+parser.cpp
+parser.h
+parser.output

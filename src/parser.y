@@ -16,13 +16,8 @@ extern int yydebug;
 extern int optind;
 
 void yyerror(const char* msg);
-void print_value(token_t* tok);
-void print_input(token_t* tok);
-void print_token(token_t* tok);
 const char* token_name(int token_class);
 
-int parser_errors = 0;
-int parser_warnings = 0;
 Scope* record_types = new Scope("record");
 ast_t* syntax_tree;
 %}
@@ -165,7 +160,7 @@ recDeclaration			: RECORD ID '{' localDeclarations '}' {
 
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_RECORD;
+							$$->type = NODE_RECORD;
 							$$->data.name = strdup($2->input);
 							ast_add_child($$, 0, $4);
 						}
@@ -182,38 +177,10 @@ varDeclaration			: typeSpecifier varDeclList ';' {
 							while (node != NULL) {
 								decl = ast_create_node();
 								decl->lineno = node->lineno;
+								decl->type = NODE_VAR;
 								decl->data.name = strdup(node->data.name);
-
-								switch ($1->data.token_class) {
-									case BOOL:
-										if (node->data.is_array) {
-											decl->type = TYPE_VAR_BOOL_ARRAY;
-										} else {
-											decl->type = TYPE_VAR_BOOL;
-										}
-										break;
-									case CHAR:
-										if (node->data.is_array) {
-											decl->type = TYPE_VAR_CHAR_ARRAY;
-										} else {
-											decl->type = TYPE_VAR_CHAR;
-										}
-										break;
-									case INT:
-										if (node->data.is_array) {
-											decl->type = TYPE_VAR_INT_ARRAY;
-										} else {
-											decl->type = TYPE_VAR_INT;
-										}
-										break;
-									case RECTYPE:
-										if (node->data.is_array) {
-											decl->type = TYPE_VAR_REC_ARRAY;
-										} else {
-											decl->type = TYPE_VAR_REC;
-										}
-										break;
-								}
+								decl->data.type = $1->data.type;
+								decl->data.is_array = node->data.is_array;
 
 								if (node->child[0]) {
 									ast_add_child(decl, 0, node->child[0]);
@@ -241,37 +208,9 @@ scopedVarDeclaration	: scopedTypeSpecifier varDeclList ';' {
 								decl = ast_create_node();
 								decl->lineno = node->lineno;
 								decl->data.name = strdup(node->data.name);
-
-								switch ($1->data.token_class) {
-									case BOOL:
-										if (node->data.is_array) {
-											decl->type = TYPE_VAR_BOOL_ARRAY;
-										} else {
-											decl->type = TYPE_VAR_BOOL;
-										}
-										break;
-									case CHAR:
-										if (node->data.is_array) {
-											decl->type = TYPE_VAR_CHAR_ARRAY;
-										} else {
-											decl->type = TYPE_VAR_CHAR;
-										}
-										break;
-									case INT:
-										if (node->data.is_array) {
-											decl->type = TYPE_VAR_INT_ARRAY;
-										} else {
-											decl->type = TYPE_VAR_INT;
-										}
-										break;
-									case RECTYPE:
-										if (node->data.is_array) {
-											decl->type = TYPE_VAR_REC_ARRAY;
-										} else {
-											decl->type = TYPE_VAR_REC;
-										}
-										break;
-								}
+								decl->type = NODE_VAR;
+								decl->data.type = $1->data.type;
+								decl->data.is_array = node->data.is_array;
 
 								if (node->child[0]) {
 									ast_add_child(decl, 0, node->child[0]);
@@ -309,13 +248,13 @@ varDeclInitialize		: varDeclId {
 varDeclId				: ID {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_ID;
+							$$->type = NODE_ID;
 							$$->data.name = strdup($1->input);
 						}
 						| ID '[' NUMCONST ']' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_ID;
+							$$->type = NODE_ID;
 							$$->data.name = strdup($1->input);
 							$$->data.is_array = 1;
 						}
@@ -334,36 +273,41 @@ typeSpecifier			: returnTypeSpecifier {
 						}
 						| RECTYPE {
 							$$ = ast_from_token($1);
+							$$->data.type = TYPE_RECORD;
 						}
 						;
 
 returnTypeSpecifier		: INT {
 							$$ = ast_from_token($1);
+							$$->data.type = TYPE_INT;
 						}
 						| BOOL {
 							$$ = ast_from_token($1);
+							$$->data.type = TYPE_BOOL;
 						}
 						| CHAR {
 							$$ = ast_from_token($1);
+							$$->data.type = TYPE_CHAR;
 						}
 						;
 
 funDeclaration			: typeSpecifier ID '(' params ')' statement {
 							$$ = ast_create_node();
 							$$->lineno = $2->lineno;
+							$$->type = NODE_FUNC;
 
 							switch ($1->data.token_class) {
 								case BOOL:
-									$$->type = TYPE_FUNC_BOOL;
+									$$->data.type = TYPE_BOOL;
 									break;
 								case CHAR:
-									$$->type = TYPE_FUNC_CHAR;
+									$$->data.type = TYPE_CHAR;
 									break;
 								case INT:
-									$$->type = TYPE_FUNC_INT;
+									$$->data.type = TYPE_INT;
 									break;
 								case RECTYPE:
-									$$->type = TYPE_FUNC_REC;
+									$$->data.type = TYPE_RECORD;
 									break;
 							}
 
@@ -375,7 +319,8 @@ funDeclaration			: typeSpecifier ID '(' params ')' statement {
 						| ID '(' params ')' statement {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_FUNC_VOID;
+							$$->type = NODE_FUNC;
+							$$->data.type = TYPE_VOID;
 							$$->data.name = strdup($1->value.str_val);
 							ast_add_child($$, 0, $3);
 							ast_add_child($$, 1, $5);
@@ -409,38 +354,10 @@ paramTypeList			: typeSpecifier paramIdList {
 							while (node != NULL) {
 								decl = ast_create_node();
 								decl->lineno = node->lineno;
+								decl->type = NODE_PARAM;
 								decl->data.name = strdup(node->data.name);
-
-								switch ($1->data.token_class) {
-									case BOOL:
-										if (node->data.is_array) {
-											decl->type = TYPE_PARAM_BOOL_ARRAY;
-										} else {
-											decl->type = TYPE_PARAM_BOOL;
-										}
-										break;
-									case CHAR:
-										if (node->data.is_array) {
-											decl->type = TYPE_PARAM_CHAR_ARRAY;
-										} else {
-											decl->type = TYPE_PARAM_CHAR;
-										}
-										break;
-									case INT:
-										if (node->data.is_array) {
-											decl->type = TYPE_PARAM_INT_ARRAY;
-										} else {
-											decl->type = TYPE_PARAM_INT;
-										}
-										break;
-									case RECTYPE:
-										if (node->data.is_array) {
-											decl->type = TYPE_PARAM_REC_ARRAY;
-										} else {
-											decl->type = TYPE_PARAM_REC;
-										}
-										break;
-								}
+								decl->data.type = $1->data.type;
+								decl->data.is_array = node->data.is_array;
 
 								if (node->child[0]) {
 									ast_add_child(decl, 0, node->child[0]);
@@ -469,13 +386,13 @@ paramIdList				: paramIdList ',' paramId {
 paramId					: ID {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_ID;
+							$$->type = NODE_ID;
 							$$->data.name = strdup($1->input);
 						}
 						| ID '[' ']' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_ID;
+							$$->type = NODE_ID;
 							$$->data.name = strdup($1->input);
 							$$->data.is_array = 1;
 						}
@@ -492,7 +409,7 @@ statement				: matchedStmt {
 matchedStmt				: IF '(' simpleExpression ')' matchedStmt ELSE matchedStmt {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_IF;
+							$$->type = NODE_IF;
 							ast_add_child($$, 0, $3);
 							ast_add_child($$, 1, $5);
 							ast_add_child($$, 2, $7);
@@ -500,7 +417,7 @@ matchedStmt				: IF '(' simpleExpression ')' matchedStmt ELSE matchedStmt {
 						| WHILE '(' simpleExpression ')' matchedStmt {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_WHILE;
+							$$->type = NODE_WHILE;
 							ast_add_child($$, 0, $3);
 							ast_add_child($$, 1, $5);
 						}
@@ -512,21 +429,21 @@ matchedStmt				: IF '(' simpleExpression ')' matchedStmt ELSE matchedStmt {
 unmatchedStmt			: IF '(' simpleExpression ')' matchedStmt {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_IF;
+							$$->type = NODE_IF;
 							ast_add_child($$, 0, $3);
 							ast_add_child($$, 1, $5);
 						}
 						| IF '(' simpleExpression ')' unmatchedStmt {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_IF;
+							$$->type = NODE_IF;
 							ast_add_child($$, 0, $3);
 							ast_add_child($$, 1, $5);
 						}
 						| IF '(' simpleExpression ')' matchedStmt ELSE unmatchedStmt {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_IF;
+							$$->type = NODE_IF;
 							ast_add_child($$, 0, $3);
 							ast_add_child($$, 1, $5);
 							ast_add_child($$, 2, $7);
@@ -534,7 +451,7 @@ unmatchedStmt			: IF '(' simpleExpression ')' matchedStmt {
 						| WHILE '(' simpleExpression ')' unmatchedStmt {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_WHILE;
+							$$->type = NODE_WHILE;
 							ast_add_child($$, 0, $3);
 							ast_add_child($$, 1, $5);
 						}
@@ -557,7 +474,8 @@ otherStmt				: expressionStmt {
 compoundStmt			: '{' localDeclarations statementList '}' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_COMPOUND;
+							$$->type = NODE_COMPOUND;
+							$$->data.type = TYPE_VOID;
 							ast_add_child($$, 0, $2);
 							ast_add_child($$, 1, $3);
 						}
@@ -603,12 +521,14 @@ expressionStmt			: expression ';' {
 returnStmt				: RETURN ';' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_RETURN;
+							$$->type = NODE_RETURN;
+							$$->data.type = TYPE_VOID;
 						}
 						| RETURN expression ';' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_RETURN;
+							$$->type = NODE_RETURN;
+							$$->data.type = TYPE_VOID;
 							ast_add_child($$, 0, $2);
 						}
 						;
@@ -616,62 +536,69 @@ returnStmt				: RETURN ';' {
 breakStmt				: BREAK ';' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_BREAK;
+							$$->type = NODE_BREAK;
 						}
 						;
 
 expression				: mutable '=' expression {
 							$$ = ast_create_node();
 							$$->lineno = $2->lineno;
-							$$->type = TYPE_ASSIGN;
+							$$->type = NODE_ASSIGN;
 							$$->data.name = strdup($2->input);
+							$$->data.op = OP_ASS,
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
 						| mutable ADDASS expression {
 							$$ = ast_create_node();
 							$$->lineno = $2->lineno;
-							$$->type = TYPE_ASSIGN;
+							$$->type = NODE_ASSIGN;
 							$$->data.name = strdup($2->input);
+							$$->data.op = OP_ADDASS,
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
 						| mutable SUBASS expression {
 							$$ = ast_create_node();
 							$$->lineno = $2->lineno;
-							$$->type = TYPE_ASSIGN;
+							$$->type = NODE_ASSIGN;
 							$$->data.name = strdup($2->input);
+							$$->data.op = OP_SUBASS,
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
 						| mutable MULASS expression {
 							$$ = ast_create_node();
 							$$->lineno = $2->lineno;
-							$$->type = TYPE_ASSIGN;
+							$$->type = NODE_ASSIGN;
 							$$->data.name = strdup($2->input);
+							$$->data.op = OP_MULASS,
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
 						| mutable DIVASS expression {
 							$$ = ast_create_node();
 							$$->lineno = $2->lineno;
-							$$->type = TYPE_ASSIGN;
+							$$->type = NODE_ASSIGN;
 							$$->data.name = strdup($2->input);
+							$$->data.op = OP_DIVASS,
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
 						| mutable INC {
 							$$ = ast_create_node();
 							$$->lineno = $2->lineno;
-							$$->type = TYPE_ASSIGN;
+							$$->type = NODE_ASSIGN;
 							$$->data.name = strdup($2->input);
+							$$->data.op = OP_INC,
 							ast_add_child($$, 0, $1);
 						}
 						| mutable DEC {
 							$$ = ast_create_node();
 							$$->lineno = $2->lineno;
-							$$->type = TYPE_ASSIGN;
+							$$->type = NODE_ASSIGN;
 							$$->data.name = strdup($2->input);
+							$$->data.op = OP_DEC,
 							ast_add_child($$, 0, $1);
 						}
 						| simpleExpression {
@@ -682,8 +609,9 @@ expression				: mutable '=' expression {
 simpleExpression		: simpleExpression OR andExpression {
 							$$ = ast_create_node();
 							$$->lineno = $2->lineno;
-							$$->type = TYPE_OP;
+							$$->type = NODE_OP;
 							$$->data.name = strdup($2->input);
+							$$->data.op = OP_OR,
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
@@ -695,8 +623,9 @@ simpleExpression		: simpleExpression OR andExpression {
 andExpression			: andExpression AND unaryRelExpression {
 							$$ = ast_create_node();
 							$$->lineno = $2->lineno;
-							$$->type = TYPE_OP;
+							$$->type = NODE_OP;
 							$$->data.name = strdup($2->input);
+							$$->data.op = OP_AND;
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
@@ -708,8 +637,9 @@ andExpression			: andExpression AND unaryRelExpression {
 unaryRelExpression		: NOT unaryRelExpression {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_OP;
+							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
+							$$->data.op = OP_NOT;
 							ast_add_child($$, 0, $2);
 						}
 						| relExpression {
@@ -730,38 +660,44 @@ relExpression			: sumExpression relop sumExpression {
 relop					: LESSEQ {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_OP;
+							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
+							$$->data.op = OP_LESSEQ;
 						}
 						| '<' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_OP;
+							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
+							$$->data.op = OP_LESS;
 						}
 						| '>' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_OP;
+							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
+							$$->data.op = OP_GRT;
 						}
 						| GRTEQ {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_OP;
+							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
+							$$->data.op = OP_GRTEQ;
 						}
 						| EQ {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_OP;
+							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
+							$$->data.op = OP_EQ;
 						}
 						| NOTEQ {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_OP;
+							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
+							$$->data.op = OP_NOTEQ;
 						}
 						;
 
@@ -778,14 +714,16 @@ sumExpression			: sumExpression sumop term {
 sumop					: '+' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_OP;
+							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
+							$$->data.op = OP_ADD;
 						}
 						| '-' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_OP;
+							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
+							$$->data.op = OP_SUB;
 						}
 						;
 
@@ -802,20 +740,23 @@ term					: term mulop unaryExpression {
 mulop					: '*' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_OP;
+							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
+							$$->data.op = OP_MUL;
 						}
 						| '/' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_OP;
+							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
+							$$->data.op = OP_DIV;
 						}
 						| '%' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_OP;
+							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
+							$$->data.op = OP_MOD;
 						}
 						;
 
@@ -831,20 +772,23 @@ unaryExpression			: unaryop unaryExpression {
 unaryop					: '-' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_OP;
+							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
+							$$->data.op = OP_NEG;
 						}
 						| '*' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_OP;
+							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
+							$$->data.op = OP_SIZE;
 						}
 						| '?' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_OP;
+							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
+							$$->data.op = OP_QMARK;
 						}
 						;
 
@@ -859,14 +803,15 @@ factor					: immutable {
 mutable					: ID {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_ID;
+							$$->type = NODE_ID;
 							$$->data.name = strdup($1->input);
 						}
 						| mutable '[' expression ']' {
 							$$ = ast_create_node();
 							$$->lineno = $2->lineno;
-							$$->type = TYPE_OP;
+							$$->type = NODE_OP;
 							$$->data.name = strdup($2->input);
+							$$->data.op = OP_SUBSC;
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
@@ -875,12 +820,13 @@ mutable					: ID {
 
 							$$ = ast_create_node();
 							$$->lineno = $2->lineno;
-							$$->type = TYPE_OP;
+							$$->type = NODE_OP;
 							$$->data.name = strdup($2->input);
+							$$->data.op = OP_DOT;
 
 							id = ast_create_node();
 							id->lineno = $3->lineno;
-							id->type = TYPE_ID;
+							id->type = NODE_ID;
 							id->data.name = strdup($3->input);
 
 							ast_add_child($$, 0, $1);
@@ -902,7 +848,7 @@ immutable				: '(' expression ')' {
 call					: ID '(' args ')' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_CALL;
+							$$->type = NODE_CALL;
 							$$->data.name = strdup($1->value.str_val);
 							ast_add_child($$, 0, $3);
 						}
@@ -927,19 +873,22 @@ argList					: argList ',' expression {
 constant				: NUMCONST {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_CONST_INT;
+							$$->type = NODE_CONST;
+							$$->data.type = TYPE_INT;
 							$$->data.int_val = $1->value.int_val;
 						}
 						| CHARCONST {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_CONST_CHAR;
+							$$->type = NODE_CONST;
+							$$->data.type = TYPE_CHAR;
 							$$->data.char_val = $1->value.char_val;
 						}
 						| BOOLCONST {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
-							$$->type = TYPE_CONST_BOOL;
+							$$->type = NODE_CONST;
+							$$->data.type = TYPE_BOOL;
 							$$->data.bool_val = $1->value.int_val;
 						}
 						;
@@ -948,53 +897,6 @@ constant				: NUMCONST {
 
 void yyerror(const char* msg) {
 	fprintf(stdout, "parser error: %s\n", msg);
-
-	return;
-}
-
-void print_value(token_t* tok) {
-	switch (tok->value_mode) {
-		case MODE_NONE:
-			break;
-		case MODE_INT:
-			fprintf(stdout, " Value: %i", tok->value.int_val);
-			break;
-		case MODE_CHAR:
-			fprintf(stdout, " Value: \'%c\'", tok->value.char_val);
-			break;
-		case MODE_STR:
-			fprintf(stdout, " Value: %s", tok->value.str_val);
-			break;
-	}
-
-	return;
-}
-
-void print_input(token_t* tok) {
-	fprintf(stdout, "  Input: %s", tok->input);
-
-	return;
-}
-
-void print_token(token_t* tok) {
-	fprintf(stdout, "Line %i Token: %s", tok->lineno, token_name(tok->type));
-
-	switch (tok->type) {
-		case BOOLCONST:
-		case CHARCONST:
-		case ID:
-		case NUMCONST:
-			print_value(tok);
-	}
-
-	switch (tok->type) {
-		case BOOLCONST:
-		case CHARCONST:
-		case NUMCONST:
-			print_input(tok);
-	}
-
-	fprintf(stdout, "\n");
 
 	return;
 }
@@ -1015,45 +917,4 @@ const char* token_name(int token_class) {
 	}
 
 	return (const char*) name;
-}
-
-int main(int argc, char** argv) {
-	char c;
-	int i;
-
-	while ((c = getopt(argc, argv, (char*) "d")) != -1) {
-		switch (c) {
-			case 'd':
-				yydebug = 1;
-				break;
-			case '?':
-			default:
-				fprintf(stderr, "getopt: case '%c'\n", c);
-				exit(1);
-		}
-	}
-
-	switch (argc - optind) {
-		case 1:
-			scanner_use_file(argv[optind]);
-			break;
-		case 0:
-			/* read from STDIN */
-			break;
-		default:
-			fprintf(stderr, "%s: invalid arguments:\n", argv[0]);
-			for (i = optind; i < argc; i++) {
-				fprintf(stderr, "  %i: %s\n", i, argv[i]);
-			}
-			exit(1);
-	}
-
-	yyparse();
-
-	ast_print(syntax_tree);
-
-	fprintf(stdout, "Number of warnings: %i\n", parser_warnings);
-	fprintf(stdout, "Number of errors: %i\n", parser_errors);
-
-	exit(0);
 }

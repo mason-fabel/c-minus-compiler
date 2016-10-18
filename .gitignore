@@ -1,8 +1,9 @@
-obj/*
+# Binary files
 c-
-test/*
+
+# Test files
 fabe0940.tar
-src/*
+test/*
 
-
+# Temporary files
 *.swp
