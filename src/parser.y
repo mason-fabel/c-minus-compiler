@@ -774,7 +774,7 @@ unaryop					: '-' {
 							$$->lineno = $1->lineno;
 							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
-							$$->data.op = OP_SUB;
+							$$->data.op = OP_NEG;
 						}
 						| '*' {
 							$$ = ast_create_node();

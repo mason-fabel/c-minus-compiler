@@ -52,6 +52,7 @@ typedef enum {
 	OP_MOD,
 	OP_MUL,
 	OP_MULASS,
+	OP_NEG,
 	OP_NONE,
 	OP_NOT,
 	OP_NOTEQ,

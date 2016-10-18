@@ -35,51 +35,51 @@ TESTS := test-basic test-everything test-exp test-exp2 test-init test-record tes
 
 test : test-regression
 
-test-regression : test-tiny test-small test-whileif test-z test-tinyscope test-tinybad test-tinygood test-everything
+test-regression : test-tiny test-small test-whileif test-z test-tinyscope test-tinybad test-tinygood test-everything test-basic
 
 test-all : $(TESTS)
 
 test-basic : $(BIN)
-	./$(BIN) -P test/basicAll4.c- | diff -y - test/basicAll4.out | less
+	./$(BIN) -P test/basicAll4.c- | diff --width=190 -y - test/basicAll4.out | less
 
 test-everything : $(BIN)
-	./$(BIN) -P test/everything05.c- | diff -y - test/everything05.out | less
+	./$(BIN) -P test/everything05.c- | diff --width=190 -y - test/everything05.out | less
 
 test-exp : $(BIN)
-	./$(BIN) -P test/exp.c- | diff -y - test/exp.out | less
+	./$(BIN) -P test/exp.c- | diff --width=190 -y - test/exp.out | less
 
 test-exp2 : $(BIN)
-	./$(BIN) -P test/exp2.c- | diff -y - test/exp2.out | less
+	./$(BIN) -P test/exp2.c- | diff --width=190 -y - test/exp2.out | less
 
 test-init : $(BIN)
-	./$(BIN) -P test/init.c- | diff -y - test/init.out | less
+	./$(BIN) -P test/init.c- | diff --width=190 -y - test/init.out | less
 
 test-record : $(BIN)
-	./$(BIN) -P test/record.c- | diff -y - test/record.out | less
+	./$(BIN) -P test/record.c- | diff --width=190 -y - test/record.out | less
 
 test-scope : $(BIN)
-	./$(BIN) -P test/scope.c- | diff -y - test/scope.out | less
+	./$(BIN) -P test/scope.c- | diff --width=190 -y - test/scope.out | less
 
 test-small : $(BIN)
-	./$(BIN) -P test/small.c- | diff -y - test/small.out | less
+	./$(BIN) -P test/small.c- | diff --width=190 -y - test/small.out | less
 
 test-tiny : $(BIN)
-	./$(BIN) -P test/tiny.c- | diff -y - test/tiny.out | less
+	./$(BIN) -P test/tiny.c- | diff --width=190 -y - test/tiny.out | less
 
 test-tinybad : $(BIN)
-	./$(BIN) -P test/tinybad.c- | diff -y - test/tinybad.out | less
+	./$(BIN) -P test/tinybad.c- | diff --width=190 -y - test/tinybad.out | less
 
 test-tinygood : $(BIN)
-	./$(BIN) -P test/tinygood.c- | diff -y - test/tinygood.out | less
+	./$(BIN) -P test/tinygood.c- | diff --width=190 -y - test/tinygood.out | less
 
 test-tinyscope : $(BIN)
-	./$(BIN) -P test/tinyscope.c- | diff -y - test/tinyscope.out | less
+	./$(BIN) -P test/tinyscope.c- | diff --width=190 -y - test/tinyscope.out | less
 
 test-tinytype : $(BIN)
-	./$(BIN) -P test/tinyType.c- | diff -y - test/tinyType.out | less
+	./$(BIN) -P test/tinyType.c- | diff --width=190 -y - test/tinyType.out | less
 
 test-whileif : $(BIN)
-	./$(BIN) -P test/whileif.c- | diff -y - test/whileif.out | less
+	./$(BIN) -P test/whileif.c- | diff --width=190 -y - test/whileif.out | less
 
 test-z : $(BIN)
-	./$(BIN) -P test/z.c- | diff -y - test/z.out | less
+	./$(BIN) -P test/z.c- | diff --width=190 -y - test/z.out | less
