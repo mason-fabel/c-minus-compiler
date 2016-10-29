@@ -3,43 +3,24 @@
 #include "ast.h"
 #include "semantic.h"
 #include "symtab.h"
+#include "analysis/analysis.h"
 
-void _sem_type(ast_t* node);
+void _sem_analysis(ast_t* node);
 void pre_action(ast_t* node);
 void post_action(ast_t* node);
 void check_node(ast_t* node);
-
-int binop_no_array(ast_t* node);
-int binop_no_void(ast_t* node);
-int binop_only_array(ast_t* node);
-int binop_only_bool(ast_t* node);
-int binop_only_char_or_int(ast_t* node);
-int binop_only_int(ast_t* node);
-int binop_same_type(ast_t* node);
-int id_defined(ast_t* node);
-int id_not_func(ast_t* node);
-int id_only_func(ast_t* node);
-int index_no_array(ast_t* node);
-int index_only_array(ast_t* node);
-int index_only_int(ast_t* node);
-int return_no_array(ast_t* node);
-int unary_no_array(ast_t* node);
-int unary_only_array(ast_t* node);
-int unary_only_bool(ast_t* node);
-int unary_only_int(ast_t* node);
-
-void error_lineno(ast_t* node);
-void error_symbol_defined(ast_t* node);
+ast_t* _sem_link_io(ast_t* tree);
 
 extern int errors;
 extern int warnings;
 
 SymbolTable sem_symtab;
 
-void sem_analysis(ast_t* tree) {
+ast_t* sem_analysis(ast_t* tree) {
 	ast_t* def;
 
-	_sem_type(tree);
+	tree = _sem_link_io(tree);
+	_sem_analysis(tree);
 
 	def = (ast_t*) sem_symtab.lookupGlobal("main");
 	if (def == NULL || def->type != NODE_FUNC) {
@@ -47,10 +28,100 @@ void sem_analysis(ast_t* tree) {
 		fprintf(stdout, "ERROR(LINKER): Procedure main is not defined.\n");
 	}
 
-	return;
+	return tree;
 }
 
-void _sem_type(ast_t* node) {
+ast_t* _sem_link_io(ast_t* tree) {
+	ast_t* head;
+	ast_t* curr;
+	ast_t* tmp;
+
+	/* input */
+	head = ast_create_node();
+	head->lineno = -1;
+	head->type = NODE_FUNC;
+	head->data.name = (char*) "input";
+	head->data.type = TYPE_INT;
+	curr = head;
+
+	/* output */
+	tmp = ast_create_node();
+	tmp->lineno = -1;
+	tmp->type = NODE_FUNC;
+	tmp->data.name = (char*) "output";
+	tmp->data.type = TYPE_VOID;
+	ast_add_sibling(curr, tmp);
+	curr = curr->sibling;
+	tmp = ast_create_node();
+	tmp->lineno = -1;
+	tmp->type = NODE_PARAM;
+	tmp->data.name = (char*) "*dummy*";
+	tmp->data.type = TYPE_INT;
+	ast_add_child(curr, 0, tmp);
+
+	/* inputb */
+	tmp = ast_create_node();
+	tmp->lineno = -1;
+	tmp->type = NODE_FUNC;
+	tmp->data.name = (char*) "inputb";
+	tmp->data.type = TYPE_BOOL;
+	ast_add_sibling(curr, tmp);
+	curr = curr->sibling;
+
+	/* outputb */
+	tmp = ast_create_node();
+	tmp->lineno = -1;
+	tmp->type = NODE_FUNC;
+	tmp->data.name = (char*) "outputb";
+	tmp->data.type = TYPE_VOID;
+	ast_add_sibling(curr, tmp);
+	curr = curr->sibling;
+	tmp = ast_create_node();
+	tmp->lineno = -1;
+	tmp->type = NODE_PARAM;
+	tmp->data.name = (char*) "*dummy*";
+	tmp->data.type = TYPE_BOOL;
+	ast_add_child(curr, 0, tmp);
+
+	/* inputc */
+	tmp = ast_create_node();
+	tmp->lineno = -1;
+	tmp->type = NODE_FUNC;
+	tmp->data.name = (char*) "inputc";
+	tmp->data.type = TYPE_CHAR;
+	ast_add_sibling(curr, tmp);
+	curr = curr->sibling;
+
+	/* outputc */
+	tmp = ast_create_node();
+	tmp->lineno = -1;
+	tmp->type = NODE_FUNC;
+	tmp->data.name = (char*) "outputc";
+	tmp->data.type = TYPE_VOID;
+	ast_add_sibling(curr, tmp);
+	curr = curr->sibling;
+	tmp = ast_create_node();
+	tmp->lineno = -1;
+	tmp->type = NODE_PARAM;
+	tmp->data.name = (char*) "*dummy*";
+	tmp->data.type = TYPE_VOID;
+	ast_add_child(curr, 0, tmp);
+
+	/* outnl */
+	tmp = ast_create_node();
+	tmp->lineno = -1;
+	tmp->type = NODE_FUNC;
+	tmp->data.name = (char*) "outnl";
+	tmp->data.type = TYPE_VOID;
+	ast_add_sibling(curr, tmp);
+	curr = curr->sibling;
+
+	ast_add_sibling(head, tree);
+
+	return head;
+}
+
+void _sem_analysis(ast_t* node) {
 	int i;
 
 	if (node == NULL) return;
@@ -58,13 +129,13 @@ void _sem_type(ast_t* node) {
 	pre_action(node);
 
 	for (i = 0; i < node->num_children; i++) {
-		_sem_type(node->child[i]);
+		_sem_analysis(node->child[i]);
 	}
 
 	check_node(node);
 	post_action(node);
 
-	_sem_type(node->sibling);
+	_sem_analysis(node->sibling);
 
 	return;
 }
@@ -184,6 +255,7 @@ void check_node(ast_t* node) {
 					break;
 				default:
 					binop_no_void(node) && binop_same_type(node);
+					binop_match_array(node);
 			}
 			break;
 		case NODE_CALL:
@@ -212,6 +284,7 @@ void check_node(ast_t* node) {
 				case OP_NOTEQ:
 					binop_same_type(node);
 					binop_no_void(node);
+					binop_match_array(node);
 					break;
 				case OP_GRT:
 				case OP_GRTEQ:
@@ -246,422 +319,6 @@ void check_node(ast_t* node) {
 			return_no_array(node);
 			break;
 	}
-
-	return;
-}
-
-int binop_no_array(ast_t* node) {
-	int pass;
-	ast_t* lhs;
-	ast_t* rhs;
-
-	lhs = node->child[0];
-	rhs = node->child[1];
-
-	pass = !((lhs && lhs->data.is_array) || (rhs && rhs->data.is_array));
-
-	if (!pass) {
-		error_lineno(node);
-		fprintf(stdout, "The operation '%s' does not work with arrays.\n",
-			node->data.name);
-	}
-
-	return pass;
-}
-
-int binop_no_void(ast_t* node) {
-	int pass;
-	ast_t* lhs;
-	ast_t* rhs;
-
-	pass = 1;
-	lhs = node->child[0];
-	rhs = node->child[1];
-
-	if (!lhs) return 0;
-	if (!rhs) return 0;
-
-	if (lhs->data.type == TYPE_VOID) {
-		pass = 0;
-		error_lineno(node);
-		fprintf(stdout,
-			"'%s' requires operands of NONVOID but lhs is of %s.\n",
-			node->data.name, ast_type_string(lhs->data.type));
-	}
-
-	if (rhs->data.type == TYPE_VOID) {
-		pass = 0;
-		error_lineno(node);
-		fprintf(stdout,
-			"'%s' requires operands of NONVOID but rhs is of %s.\n",
-			node->data.name, ast_type_string(rhs->data.type));
-	}
-
-	return pass;
-}
-
-int binop_only_array(ast_t* node) {
-	int pass;
-	ast_t* lhs;
-	ast_t* rhs;
-
-	lhs = node->child[0];
-	rhs = node->child[1];
-
-	if (!lhs || !rhs) return 0;
-
-	pass = lhs->data.is_array && rhs->data.is_array;
-
-	if (!pass) {
-		error_lineno(node);
-		fprintf(stdout, "The operation '%s' only works with arrays.\n",
-			node->data.name);
-	}
-
-	return pass;
-}
-
-int binop_only_int(ast_t* node) {
-	int pass;
-	ast_t* lhs;
-	ast_t* rhs;
-
-	lhs = node->child[0];
-	rhs = node->child[1];
-
-	if (!lhs || !rhs) return 0;
-
-	if (lhs->data.type != TYPE_INT && lhs->data.type != TYPE_NONE) {
-		pass = 0;
-		error_lineno(node);
-		fprintf(stdout,
-			"'%s' requires operands of type int but lhs is of %s.\n",
-			node->data.name, ast_type_string(lhs->data.type));
-	}
-
-	if (rhs->data.type != TYPE_INT && rhs->data.type != TYPE_NONE) {
-		pass = 0;
-		error_lineno(node);
-		fprintf(stdout,
-			"'%s' requires operands of type int but rhs is of %s.\n",
-			node->data.name, ast_type_string(rhs->data.type));
-	}
-
-	return pass;
-}
-
-int binop_only_bool(ast_t* node) {
-	int pass;
-	ast_t* lhs;
-	ast_t* rhs;
-
-	lhs = node->child[0];
-	rhs = node->child[1];
-
-	if (!lhs || !rhs) return 0;
-
-	if (lhs->data.type != TYPE_BOOL && lhs->data.type != TYPE_NONE) {
-		pass = 0;
-		error_lineno(node);
-		fprintf(stdout,
-			"'%s' requires operands of type bool but lhs is of %s.\n",
-			node->data.name, ast_type_string(lhs->data.type));
-	}
-
-	if (rhs->data.type != TYPE_BOOL && rhs->data.type != TYPE_NONE) {
-		pass = 0;
-		error_lineno(node);
-		fprintf(stdout,
-			"'%s' requires operands of type bool but rhs is of %s.\n",
-			node->data.name, ast_type_string(rhs->data.type));
-	}
-
-	return pass;
-}
-
-int binop_only_char_or_int(ast_t* node) {
-	int pass;
-	ast_t* lhs;
-	ast_t* rhs;
-
-	pass = 1;
-	lhs = node->child[0];
-	rhs = node->child[1];
-
-	if (!lhs || !rhs) return 0;
-
-	if (lhs->data.type != TYPE_CHAR && lhs->data.type != TYPE_INT
-		&& lhs->data.type != TYPE_NONE
-	) {
-		pass = 0;
-		error_lineno(node);
-		fprintf(stdout, "'%s' requires operands of type char or type int ",
-			node->data.name);
-		fprintf(stdout, "but lhs is of %s.\n",
-			ast_type_string(lhs->data.type));
-	}
-
-	if (rhs->data.type != TYPE_CHAR && rhs->data.type != TYPE_INT
-		&& rhs->data.type != TYPE_NONE
-	) {
-		pass = 0;
-		error_lineno(node);
-		fprintf(stdout, "'%s' requires operands of type char or type int ",
-			node->data.name);
-		fprintf(stdout, "but rhs is of %s.\n",
-			ast_type_string(rhs->data.type));
-	}
-
-	return pass;
-}
-
-int binop_same_type(ast_t* node) {
-	int pass;
-	ast_t* lhs;
-	ast_t* rhs;
-
-	lhs = node->child[0];
-	rhs = node->child[1];
-
-	if (!lhs || !rhs) return 0;
-
-	if (lhs->data.type == TYPE_NONE) return 0;
-	if (rhs->data.type == TYPE_NONE) return 0;
-
-	pass = lhs->data.type == rhs->data.type;
-
-	if (!pass) {
-		error_lineno(node);
-		fprintf(stdout, "'%s' requires operands of the same type but ",
-			node->data.name);
-		fprintf(stdout, "lhs is %s and rhs is %s.\n",
-			ast_type_string(lhs->data.type), ast_type_string(rhs->data.type));
-	}
-
-	return pass;
-}
-
-int id_defined(ast_t* node) {
-	int pass;
-	ast_t* def;
-
-	def = (ast_t*) sem_symtab.lookup(std::string(node->data.name));
-
-	pass = def != NULL;
-
-	if (!pass) {
-		error_lineno(node);
-		fprintf(stdout, "Symbol '%s' is not defined.\n", node->data.name);
-	}
-
-	return pass;
-}
-
-int id_not_func(ast_t* node) {
-	int pass;
-	ast_t* def;
-
-	def = (ast_t*) sem_symtab.lookup(std::string(node->data.name));
-	if (!def) return 0;
-
-	pass = def->type != NODE_FUNC;
-
-	if (!pass) {
-		error_lineno(node);
-		fprintf(stdout, "Cannot use function '%s' as a variable.\n",
-			node->data.name);
-	}
-
-	return pass;
-}
-
-int id_only_func(ast_t* node) {
-	int pass;
-	ast_t* def;
-
-	def = (ast_t*) sem_symtab.lookup(std::string(node->data.name));
-	if (!def) return 0;
-
-	pass = def->type == NODE_FUNC;
-
-	if (!pass) {
-		error_lineno(node);
-		fprintf(stdout, "'%s' is a simple variable and cannot be called.\n",
-			node->data.name);
-	}
-
-	return pass;
-}
-
-int index_no_array(ast_t* node) {
-	int pass;
-	ast_t* arg;
-
-	arg = node->child[1];
-	if (!arg) return 0;
-
-	pass = !arg->data.is_array;
-
-	if (!pass) {
-		error_lineno(node);
-		fprintf(stdout, "Array index is the unindexed array '%s'.\n",
-			arg->data.name);
-	}
-
-	return pass;
-}
-
-int index_only_array(ast_t* node) {
-	int pass;
-	ast_t* arr;
-
-	arr = node->child[0];
-	if (!arr) return 0;
-
-	pass = arr->data.is_array;
-
-	if (!pass) {
-		error_lineno(node);
-		fprintf(stdout, "Cannot index nonarray");
-		if (arr->type == NODE_ID) {
-			fprintf(stdout, " '%s'", arr->data.name);
-		}
-		fprintf(stdout, ".\n");
-	}
-
-	return pass;
-}
-
-int index_only_int(ast_t* node) {
-	int pass;
-	ast_t* arg;
-
-	arg = node->child[1];
-	if (!arg) return 0;
-
-	pass = arg->data.type == TYPE_INT || arg->data.type == TYPE_NONE;
-
-	if (!pass) {
-		error_lineno(node);
-		fprintf(stdout, "Array '%s' should be indexed by ",
-			(node->child[0])->data.name);
-		fprintf(stdout, "type int but got %s.\n",
-			ast_type_string(arg->data.type));
-	}
-
-	return pass;
-}
-
-int return_no_array(ast_t* node) {
-	int pass;
-	ast_t* arg;
-
-	arg = node->child[0];
-
-	if (!arg) return 1;
-
-	pass = !arg->data.is_array;
-
-	if (!pass) {
-		error_lineno(node);
-		fprintf(stdout, "Cannot return an array.\n");
-	}
-
-	return pass;
-}
-
-int unary_no_array(ast_t* node) {
-	int pass;
-	ast_t* arg;
-
-	arg = node->child[0];
-
-	pass = !arg->data.is_array;
-
-	if (!pass) {
-		error_lineno(node);
-		fprintf(stdout, "The operation '%s' does not work with arrays.\n",
-			node->data.name);
-	}
-
-	return pass;
-}
-
-int unary_only_array(ast_t* node) {
-	int pass;
-	ast_t* arr;
-
-	arr = node->child[0];
-	if (!arr) return 0;
-
-	pass = arr->data.type == TYPE_NONE || arr->data.is_array;
-
-	if (!pass) {
-		error_lineno(node);
-		fprintf(stdout, "The operation '%s' only works with arrays.\n",
-			node->data.name);
-	}
-
-	return pass;
-}
-
-int unary_only_bool(ast_t* node) {
-	int pass;
-	ast_t* arg;
-
-	arg = node->child[0];
-	if (!arg) return 0;
-
-	pass = arg->data.type == TYPE_BOOL || arg->data.type == TYPE_NONE;
-
-	if (!pass) {
-		error_lineno(node);
-		fprintf(stdout,
-			"Unary '%s' requires an operand of type %s but was given %s.\n",
-			node->data.name, ast_type_string(TYPE_BOOL),
-			ast_type_string(arg->data.type));
-	}
-
-	return pass;
-}
-
-int unary_only_int(ast_t* node) {
-	int pass;
-	ast_t* arg;
-
-	arg = node->child[0];
-	if (!arg) return 0;
-
-	pass = arg->data.type == TYPE_INT || arg->data.type == TYPE_NONE;
-
-	if (!pass) {
-		error_lineno(node);
-		fprintf(stdout,
-			"Unary '%s' requires an operand of type %s but was given %s.\n",
-			node->data.name, ast_type_string(TYPE_INT),
-			ast_type_string(arg->data.type));
-	}
-
-	return pass;
-}
-
-void error_lineno(ast_t* node) {
-	errors++;
-
-	fprintf(stdout, "ERROR(%i): ", node->lineno);
-
-	return;
-}
-
-void error_symbol_defined(ast_t* node) {
-	ast_t* def;
-
-	def = (ast_t*) sem_symtab.lookup(std::string(node->data.name));
-	if (!def) return;
-
-	error_lineno(node);
-	fprintf(stdout, "Symbol '%s' is already defined at line %i.\n",
-		node->data.name, def->lineno);
 
 	return;
 }

@@ -69,7 +69,7 @@ int main(int argc, char** argv) {
 
 	if (flags.print_ast) ast_print(syntax_tree, FALSE);
 
-	sem_analysis(syntax_tree);
+	syntax_tree = sem_analysis(syntax_tree);
 
 	if (flags.print_aug_ast) ast_print(syntax_tree, TRUE);
 
