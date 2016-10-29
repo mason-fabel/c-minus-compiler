@@ -7,9 +7,7 @@ BFLAGS := --verbose --report=all -Wall -Werror
 CFLAGS := -Wall -Wextra -Wno-switch -DYYDEBUG
 LFLAGS := $(CFLAGS)
 
-TESTS := test-basic test-everything test-exp test-exp2 test-init test-scope test-small test-tiny test-tinybad test-tinygood test-tinyscope test-tinytype test-whileif test-z
-
-.PHONY : clean test $(TESTS)
+.PHONY : clean submit
 
 $(BIN) : $(OBJ)
 	g++ $(LFLAGS) -o $@ $^
@@ -33,46 +31,8 @@ clean :
 tar : clean
 	tar -cf fabe0940.tar makefile src obj
 
-test : $(TESTS)
-
-test-basic : $(BIN)
-	./$(BIN) -P test/basicAll4.c- | diff --width=190 -y - test/basicAll4.out | less
-
-test-everything : $(BIN)
-	./$(BIN) -P test/everything05.c- | diff --width=190 -y - test/everything05.out | less
-
-test-exp : $(BIN)
-	./$(BIN) -P test/exp.c- | diff --width=190 -y - test/exp.out | less
-
-test-exp2 : $(BIN)
-	./$(BIN) -P test/exp2.c- | diff --width=190 -y - test/exp2.out | less
-
-test-init : $(BIN)
-	./$(BIN) -P test/init.c- | diff --width=190 -y - test/init.out | less
-
-test-scope : $(BIN)
-	./$(BIN) -P test/scope.c- | diff --width=190 -y - test/scope.out | less
-
-test-small : $(BIN)
-	./$(BIN) -P test/small.c- | diff --width=190 -y - test/small.out | less
-
-test-tiny : $(BIN)
-	./$(BIN) -P test/tiny.c- | diff --width=190 -y - test/tiny.out | less
-
-test-tinybad : $(BIN)
-	./$(BIN) -P test/tinybad.c- | diff --width=190 -y - test/tinybad.out | less
-
-test-tinygood : $(BIN)
-	./$(BIN) -P test/tinygood.c- | diff --width=190 -y - test/tinygood.out | less
-
-test-tinyscope : $(BIN)
-	./$(BIN) -P test/tinyscope.c- | diff --width=190 -y - test/tinyscope.out | less
-
-test-tinytype : $(BIN)
-	./$(BIN) -P test/tinyType.c- | diff --width=190 -y - test/tinyType.out | less
-
-test-whileif : $(BIN)
-	./$(BIN) -P test/whileif.c- | diff --width=190 -y - test/whileif.out | less
-
-test-z : $(BIN)
-	./$(BIN) -P test/z.c- | diff --width=190 -y - test/z.out | less
+submit : tar
+	curl --verbose -X POST \
+		-F student=fabel -F assignment="CS445 F16 Assignment 4" \
+		-F "submittedfile=@fabe0940.tar" \
+		"http://ec2-52-89-93-46.us-west-2.compute.amazonaws.com/cgi-bin/fileCapture.py"
