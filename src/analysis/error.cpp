@@ -24,6 +24,13 @@ void error_func_defined(ast_t* node) {
 	return;
 }
 
+void error_invalid_break(ast_t* node) {
+	error_lineno(node);
+	fprintf(stdout, "Cannot have a break statement outside of loop.\n");
+
+	return;
+}
+
 void error_symbol_defined(ast_t* node) {
 	ast_t* def;
 

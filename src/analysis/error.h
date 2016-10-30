@@ -3,6 +3,7 @@
 
 void error_lineno(ast_t* node);
 void error_func_defined(ast_t* node);
+void error_invalid_break(ast_t* node);
 void error_symbol_defined(ast_t* node);
 void warning_lineno(ast_t* node);
 

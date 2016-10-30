@@ -6,6 +6,7 @@
 #include "id.h"
 #include "index.h"
 #include "return.h"
+#include "test.h"
 #include "unary.h"
 
 #endif /* _ANALYSIS_ANALYSIS_H_ */

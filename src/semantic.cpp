@@ -167,7 +167,6 @@ void pre_action(ast_t* node) {
 			break;
 		case NODE_IF:
 			node->data.type = TYPE_VOID;
-			break_depth++;
 			break;
 		case NODE_FUNC:
 			if (node->child[1]) (node->child[1])->data.is_func_body = 1;
@@ -259,7 +258,6 @@ void post_action(ast_t* node) {
 				error_symbol_defined(node);
 			}
 			break;
-		case NODE_IF:
 		case NODE_WHILE:
 			break_depth--;
 			break;
@@ -281,12 +279,19 @@ void check_node(ast_t* node) {
 					binop_match_array(node);
 			}
 			break;
+		case NODE_BREAK:
+			if (break_depth < 1) error_invalid_break(node);
+			break;
 		case NODE_CALL:
 			id_only_func(node);
 			break;
 		case NODE_ID:
 			id_defined(node);
 			id_not_func(node);
+			break;
+		case NODE_IF:
+			test_if_only_bool(node);
+			test_if_no_array(node);
 			break;
 		case NODE_OP:
 			switch (node->data.op) {
@@ -341,6 +346,10 @@ void check_node(ast_t* node) {
 		case NODE_RETURN:
 			return_no_array(node);
 			return_match_type(node, func_def);
+			break;
+		case NODE_WHILE:
+			test_while_only_bool(node);
+			test_while_no_array(node);
 			break;
 	}
 
