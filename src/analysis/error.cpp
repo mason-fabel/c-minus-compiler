@@ -17,6 +17,13 @@ void error_lineno(ast_t* node) {
 	return;
 }
 
+void error_func_defined(ast_t* node) {
+	error_lineno(node);
+	fprintf(stdout, "Function '%s' is not defined.\n", node->data.name);
+
+	return;
+}
+
 void error_symbol_defined(ast_t* node) {
 	ast_t* def;
 
@@ -26,6 +33,14 @@ void error_symbol_defined(ast_t* node) {
 	error_lineno(node);
 	fprintf(stdout, "Symbol '%s' is already defined at line %i.\n",
 		node->data.name, def->lineno);
+
+	return;
+}
+
+void warning_lineno(ast_t* node) {
+	warnings++;
+
+	fprintf(stdout, "WARNING(%i): ", node->lineno);
 
 	return;
 }

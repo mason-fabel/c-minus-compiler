@@ -54,7 +54,7 @@ int unary_only_bool(ast_t* node) {
 	if (!pass) {
 		error_lineno(node);
 		fprintf(stdout,
-			"Unary '%s' requires an operand of type %s but was given %s.\n",
+			"Unary '%s' requires an operand of %s but was given %s.\n",
 			node->data.name, ast_type_string(TYPE_BOOL),
 			ast_type_string(arg->data.type));
 	}
@@ -74,7 +74,7 @@ int unary_only_int(ast_t* node) {
 	if (!pass) {
 		error_lineno(node);
 		fprintf(stdout,
-			"Unary '%s' requires an operand of type %s but was given %s.\n",
+			"Unary '%s' requires an operand of %s but was given %s.\n",
 			node->data.name, ast_type_string(TYPE_INT),
 			ast_type_string(arg->data.type));
 	}

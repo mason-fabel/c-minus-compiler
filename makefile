@@ -6,8 +6,8 @@ OBJ := $(addprefix obj/,$(notdir $(SRC:.cpp=.o))) obj/scanner.o obj/parser.o
 BIN := c-
 
 BFLAGS := --verbose --report=all -Wall -Werror
-CFLAGS := -Wall -Wextra -Wno-switch -DYYDEBUG
-LFLAGS := $(CFLAGS)
+CFLAGS := -g -Wall -Wextra -Wno-switch -DYYDEBUG
+LFLAGS := -Wall -Wextra
 
 .PHONY : clean submit
 
@@ -43,11 +43,17 @@ submit : tar
 		-F "submittedfile=@fabe0940.tar" \
 		"http://ec2-52-89-93-46.us-west-2.compute.amazonaws.com/cgi-bin/fileCapture.py"
 
-test-all : test-arrays
+test-all : test-arrays test-arrays2 test-basic-all
 
 test : test-regression
 
-test-regression : test-arrays
+test-regression : test-arrays test-arrays2 test-basic-all
 
 test-arrays : $(BIN)
 	sdiff --width=190 <(./c- -P test/arrays.c-) test/arrays.out | less
+
+test-arrays2 : $(BIN)
+	sdiff --width=190 <(./c- -P test/arrays2.c-) test/arrays2.out | less
+
+test-basic-all : $(BIN)
+	sdiff --width=190 <(./c- -P test/basicAll4.c-) test/basicAll4.out | less

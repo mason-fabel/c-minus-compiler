@@ -11,6 +11,9 @@ void post_action(ast_t* node);
 void check_node(ast_t* node);
 ast_t* _sem_link_io(ast_t* tree);
 
+int break_depth;
+ast_t* func_def;
+
 extern int errors;
 extern int warnings;
 
@@ -19,8 +22,12 @@ SymbolTable sem_symtab;
 ast_t* sem_analysis(ast_t* tree) {
 	ast_t* def;
 
+	func_def = NULL;
+	break_depth = 0;
+
 	tree = _sem_link_io(tree);
 	_sem_analysis(tree);
+	return tree;
 
 	def = (ast_t*) sem_symtab.lookupGlobal("main");
 	if (def == NULL || def->type != NODE_FUNC) {
@@ -151,7 +158,7 @@ void pre_action(ast_t* node) {
 		case NODE_CALL:
 			def = (ast_t*) sem_symtab.lookup(std::string(node->data.name));
 			if (def != NULL) node->data.type = def->data.type;
-			else id_defined(node);
+			else error_func_defined(node);
 			break;
 		case NODE_COMPOUND:
 			msg = (char*) malloc(sizeof(char) * 80);
@@ -160,6 +167,7 @@ void pre_action(ast_t* node) {
 			break;
 		case NODE_IF:
 			node->data.type = TYPE_VOID;
+			break_depth++;
 			break;
 		case NODE_FUNC:
 			if (node->child[1]) (node->child[1])->data.is_func_body = 1;
@@ -169,6 +177,7 @@ void pre_action(ast_t* node) {
 			msg = (char*) malloc(sizeof(char) * 80);
 			sprintf(msg, "function %s", node->data.name);
 			sem_symtab.enter(std::string(msg));
+			func_def = node;
 			break;
 		case NODE_ID:
 			def = (ast_t*) sem_symtab.lookup(std::string(node->data.name));
@@ -184,6 +193,7 @@ void pre_action(ast_t* node) {
 			break;
 		case NODE_WHILE:
 			node->data.type = TYPE_VOID;
+			break_depth++;
 			break;
 	}
 
@@ -207,6 +217,15 @@ void post_action(ast_t* node) {
 			break;
 		case NODE_FUNC:
 			sem_symtab.leave();
+			if (func_def->data.type != TYPE_VOID && func_def->lineno != -1
+				&&  !return_exists(func_def->child[1])
+			) {
+				warning_lineno(node);
+				fprintf(stdout, "Expecting to return %s but function '%s' ",
+					ast_type_string(node->data.type), node->data.name);
+				fprintf(stdout, "has no return statement.\n");
+			}
+			func_def = NULL;
 			break;
 		case NODE_OP:
 			switch (node->data.op) {
@@ -239,6 +258,10 @@ void post_action(ast_t* node) {
 			if (!sem_symtab.insert(node->data.name, node)) {
 				error_symbol_defined(node);
 			}
+			break;
+		case NODE_IF:
+		case NODE_WHILE:
+			break_depth--;
 			break;
 	}
 
@@ -317,6 +340,7 @@ void check_node(ast_t* node) {
 
 		case NODE_RETURN:
 			return_no_array(node);
+			return_match_type(node, func_def);
 			break;
 	}
 

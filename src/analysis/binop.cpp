@@ -12,12 +12,14 @@ int binop_match_array(ast_t* node) {
 	lhs = node->child[0];
 	rhs = node->child[1];
 
+	if (!(lhs && rhs)) return 0;
+
 	pass = lhs->data.is_array == rhs->data.is_array;
 
 	if (!pass) {
 		error_lineno(node);
 		fprintf(stdout,
-			"‘%s‘ requires that either both or neither operands be arrays.\n",
+			"'%s' requires that either both or neither operands be arrays.\n",
 			node->data.name);
 	}
 

@@ -7,6 +7,63 @@
 
 extern SymbolTable sem_symtab;
 
+int return_exists(ast_t* node) {
+	int i;
+	int has_return;
+
+	if (node == NULL) return 0;
+	if (node->type == NODE_RETURN) return 1;
+
+	for (i = 0; i < node->num_children; i++) {
+		has_return = return_exists(node->child[i]);
+	}
+	has_return = has_return || return_exists(node->sibling);
+
+	return has_return;
+}
+
+int return_match_type(ast_t* node, ast_t* def) {
+	int pass;
+	ast_type_t ret;
+
+	if (!node) return 0;
+
+	ret = node->child[0] ? node->child[0]->data.type : TYPE_NONE;
+
+	if (def->data.type == TYPE_VOID) {
+		pass = ret == TYPE_NONE;
+
+		if (!pass) {
+			error_lineno(node);
+
+			fprintf(stdout, "Function '%s' at line %i ",
+				def->data.name, def->lineno);
+			fprintf(stdout, "is expecting no return value, ");
+			fprintf(stdout, "but return has return value.\n");
+		}
+	} else {
+		pass = ret == def->data.type;
+
+		if (!pass) {
+			error_lineno(node);
+
+			fprintf(stdout, "Function '%s' at line %i ",
+				def->data.name, def->lineno);
+			fprintf(stdout, "is expecting to return %s but ",
+				ast_type_string(def->data.type));
+
+			if (ret != TYPE_NONE) {
+				fprintf(stdout, "instead returns %s.\n",
+					ast_type_string(ret));
+			} else {
+				fprintf(stdout, "return has no return value.\n");
+			}
+		}
+	}
+
+	return pass;
+}
+
 int return_no_array(ast_t* node) {
 	int pass;
 	ast_t* arg;
