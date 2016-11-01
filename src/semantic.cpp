@@ -12,6 +12,7 @@ void check_node(ast_t* node);
 ast_t* _sem_link_io(ast_t* tree);
 
 int break_depth;
+int num_return;
 ast_t* func_def;
 
 extern int errors;
@@ -24,6 +25,7 @@ ast_t* sem_analysis(ast_t* tree) {
 
 	func_def = NULL;
 	break_depth = 0;
+	num_return = 0;
 
 	tree = _sem_link_io(tree);
 	_sem_analysis(tree);
@@ -177,6 +179,7 @@ void pre_action(ast_t* node) {
 			sprintf(msg, "function %s", node->data.name);
 			sem_symtab.enter(std::string(msg));
 			func_def = node;
+			num_return = 0;
 			break;
 		case NODE_ID:
 			def = (ast_t*) sem_symtab.lookup(std::string(node->data.name));
@@ -189,6 +192,9 @@ void pre_action(ast_t* node) {
 			if (!sem_symtab.insert(node->data.name, node)) {
 				error_symbol_defined(node);
 			}
+			break;
+		case NODE_RETURN:
+			num_return++;
 			break;
 		case NODE_WHILE:
 			node->data.type = TYPE_VOID;
@@ -209,6 +215,7 @@ void post_action(ast_t* node) {
 					break;
 				default:
 					node->data.type = (node->child[0])->data.type;
+					node->data.is_array = (node->child[0])->data.is_array;
 			}
 			break;
 		case NODE_COMPOUND:
@@ -217,7 +224,7 @@ void post_action(ast_t* node) {
 		case NODE_FUNC:
 			sem_symtab.leave();
 			if (func_def->data.type != TYPE_VOID && func_def->lineno != -1
-				&&  !return_exists(func_def->child[1])
+				&& num_return < 1
 			) {
 				warning_lineno(node);
 				fprintf(stdout, "Expecting to return %s but function '%s' ",
@@ -267,6 +274,7 @@ void post_action(ast_t* node) {
 }
 
 void check_node(ast_t* node) {
+	ast_t* def;
 	switch (node->type) {
 		case NODE_ASSIGN:
 			switch (node->data.op) {
@@ -283,7 +291,9 @@ void check_node(ast_t* node) {
 			if (break_depth < 1) error_invalid_break(node);
 			break;
 		case NODE_CALL:
+			def = (ast_t*) sem_symtab.lookup(std::string(node->data.name));
 			id_only_func(node);
+			call_params(node, def);
 			break;
 		case NODE_ID:
 			id_defined(node);

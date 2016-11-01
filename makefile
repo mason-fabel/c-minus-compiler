@@ -47,7 +47,7 @@ test-all : test-arrays test-arrays2 test-basic-all test-basic-extra test-battles
 
 test : test-regression
 
-test-regression : test-arrays test-arrays2 test-basic-extra test-battleship test-bullsandcows test-call test-everything test-exp test-exp2 test-factorial test-factorial2 test-factorialr test-factor test-fractal test-gcd test-gcdsm test-op test-poker test-redefined test-simple test-simple-define test-sudoku test-tictactoe test-tiny-scope test-walsh test-whileif
+test-regression : test-arrays test-arrays2 test-basic-extra test-battleship test-bullsandcows test-call test-call4 test-everything test-exp test-exp2 test-factorial test-factorial2 test-factorialr test-factor test-fractal test-gcd test-gcdsm test-op test-poker test-redefined test-simple test-simple-define test-sudoku test-tictactoe test-tiny-scope test-walsh test-whileif
 
 test-arrays : $(BIN)
 	sdiff --width=190 <(echo $@; ./c- -P test/arrays.c-) test/arrays.out | less

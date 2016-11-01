@@ -2,6 +2,7 @@
 #define _ANALYSIS_ANALYSIS_H_
 
 #include "binop.h"
+#include "call.h"
 #include "error.h"
 #include "id.h"
 #include "index.h"

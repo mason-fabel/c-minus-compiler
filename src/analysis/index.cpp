@@ -18,8 +18,13 @@ int index_no_array(ast_t* node) {
 
 	if (!pass) {
 		error_lineno(node);
-		fprintf(stdout, "Array index is the unindexed array '%s'.\n",
-			arg->data.name);
+
+		if (arg->type == NODE_ID) {
+			fprintf(stdout, "Array index is the unindexed array '%s'.\n",
+				arg->data.name);
+		} else {
+			fprintf(stdout, "Array index is an unindexed array.\n");
+		}
 	}
 
 	return pass;
