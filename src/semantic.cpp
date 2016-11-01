@@ -210,6 +210,8 @@ void post_action(ast_t* node) {
 		case NODE_ASSIGN:
 			switch (node->data.op) {
 				case OP_ADDASS:
+				case OP_DIVASS:
+				case OP_MULASS:
 				case OP_SUBASS:
 				case OP_INC:
 				case OP_DEC:
@@ -281,12 +283,16 @@ void check_node(ast_t* node) {
 		case NODE_ASSIGN:
 			switch (node->data.op) {
 				case OP_ADDASS:
+				case OP_DIVASS:
+				case OP_MULASS:
 				case OP_SUBASS:
-					binop_no_array(node) && binop_only_int(node);
+					binop_only_int(node);
+					binop_no_array(node);
 					break;
 				case OP_INC:
 				case OP_DEC:
 					unary_only_int(node);
+					unary_no_array(node);
 					break;
 				default:
 					binop_no_void(node) && binop_same_type(node);
@@ -326,8 +332,7 @@ void check_node(ast_t* node) {
 					break;
 				case OP_EQ:
 				case OP_NOTEQ:
-					binop_same_type(node);
-					binop_no_void(node);
+					binop_no_void(node) && binop_same_type(node);
 					binop_match_array(node);
 					break;
 				case OP_GRT:
