@@ -211,6 +211,8 @@ void post_action(ast_t* node) {
 			switch (node->data.op) {
 				case OP_ADDASS:
 				case OP_SUBASS:
+				case OP_INC:
+				case OP_DEC:
 					node->data.type = TYPE_INT;
 					break;
 				default:
@@ -281,6 +283,10 @@ void check_node(ast_t* node) {
 				case OP_ADDASS:
 				case OP_SUBASS:
 					binop_no_array(node) && binop_only_int(node);
+					break;
+				case OP_INC:
+				case OP_DEC:
+					unary_only_int(node);
 					break;
 				default:
 					binop_no_void(node) && binop_same_type(node);
