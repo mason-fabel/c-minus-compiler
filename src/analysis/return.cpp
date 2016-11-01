@@ -7,21 +7,6 @@
 
 extern SymbolTable sem_symtab;
 
-int return_exists(ast_t* node) {
-	int i;
-	int has_return;
-
-	if (node == NULL) return 0;
-	if (node->type == NODE_RETURN) return 1;
-
-	for (i = 0; i < node->num_children; i++) {
-		has_return = return_exists(node->child[i]);
-	}
-	has_return = has_return || return_exists(node->sibling);
-
-	return has_return;
-}
-
 int return_match_type(ast_t* node, ast_t* def) {
 	int pass;
 	ast_type_t ret;
