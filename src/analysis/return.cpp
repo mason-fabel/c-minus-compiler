@@ -13,10 +13,8 @@ int return_match_type(ast_t* node, ast_t* def) {
 
 	if (!node) return 0;
 
-	ret = node->child[0] ? node->child[0]->data.type : TYPE_NONE;
-
 	if (def->data.type == TYPE_VOID) {
-		pass = ret == TYPE_NONE;
+		pass = !(node->child[0]);
 
 		if (!pass) {
 			error_lineno(node);
@@ -27,7 +25,8 @@ int return_match_type(ast_t* node, ast_t* def) {
 			fprintf(stdout, "but return has return value.\n");
 		}
 	} else {
-		pass = ret == def->data.type;
+		ret = node->child[0] ? node->child[0]->data.type : TYPE_VOID;
+		pass = ret == def->data.type || ret == TYPE_NONE;
 
 		if (!pass) {
 			error_lineno(node);
@@ -37,7 +36,7 @@ int return_match_type(ast_t* node, ast_t* def) {
 			fprintf(stdout, "is expecting to return %s but ",
 				ast_type_string(def->data.type));
 
-			if (ret != TYPE_NONE) {
+			if (node->child[0]) {
 				fprintf(stdout, "instead returns %s.\n",
 					ast_type_string(ret));
 			} else {

@@ -24,7 +24,7 @@ int test_if_only_bool(ast_t* node) {
 
 	test = node->child[0];
 
-	pass = test->data.type == TYPE_BOOL;
+	pass = test->data.type == TYPE_BOOL || test->data.type == TYPE_NONE;
 
 	if (!pass) {
 		error_lineno(node);
@@ -55,7 +55,7 @@ int test_while_only_bool(ast_t* node) {
 
 	test = node->child[0];
 
-	pass = test->data.type == TYPE_BOOL;
+	pass = test->data.type == TYPE_BOOL || test->data.type == TYPE_NONE;
 
 	if (!pass) {
 		error_lineno(node);
