@@ -29,7 +29,6 @@ ast_t* sem_analysis(ast_t* tree) {
 
 	tree = _sem_link_io(tree);
 	_sem_analysis(tree);
-	return tree;
 
 	def = (ast_t*) sem_symtab.lookupGlobal("main");
 	if (def == NULL || def->type != NODE_FUNC) {
