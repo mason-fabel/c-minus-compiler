@@ -364,8 +364,12 @@ void check_node(ast_t* node) {
 			break;
 
 		case NODE_RETURN:
-			return_no_array(node);
 			return_match_type(node, func_def);
+			return_no_array(node);
+			break;
+		case NODE_VAR:
+			init_only_const(node);
+			init_match_type(node);
 			break;
 		case NODE_WHILE:
 			test_while_only_bool(node);

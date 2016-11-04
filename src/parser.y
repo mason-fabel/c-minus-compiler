@@ -612,6 +612,8 @@ simpleExpression		: simpleExpression OR andExpression {
 							$$->type = NODE_OP;
 							$$->data.name = strdup($2->input);
 							$$->data.op = OP_OR,
+							$$->data.is_const =
+								$1->data.is_const && $3->data.is_const;
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
@@ -626,6 +628,8 @@ andExpression			: andExpression AND unaryRelExpression {
 							$$->type = NODE_OP;
 							$$->data.name = strdup($2->input);
 							$$->data.op = OP_AND;
+							$$->data.is_const =
+								$1->data.is_const && $3->data.is_const;
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
@@ -640,6 +644,7 @@ unaryRelExpression		: NOT unaryRelExpression {
 							$$->type = NODE_OP;
 							$$->data.name = strdup($1->input);
 							$$->data.op = OP_NOT;
+							$$->data.is_const = $2->data.is_const;
 							ast_add_child($$, 0, $2);
 						}
 						| relExpression {
@@ -649,6 +654,8 @@ unaryRelExpression		: NOT unaryRelExpression {
 
 relExpression			: sumExpression relop sumExpression {
 							$$ = $2;
+							$$->data.is_const =
+								$1->data.is_const && $3->data.is_const;
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
@@ -703,6 +710,8 @@ relop					: LESSEQ {
 
 sumExpression			: sumExpression sumop term {
 							$$ = $2;
+							$$->data.is_const =
+								$1->data.is_const && $3->data.is_const;
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
@@ -729,6 +738,8 @@ sumop					: '+' {
 
 term					: term mulop unaryExpression {
 							$$ = $2;
+							$$->data.is_const =
+								$1->data.is_const && $3->data.is_const;
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
@@ -762,6 +773,7 @@ mulop					: '*' {
 
 unaryExpression			: unaryop unaryExpression {
 							$$ = $1;
+							$$->data.is_const = $2->data.is_const;
 							ast_add_child($$, 0, $2);
 						}
 						| factor {
@@ -836,6 +848,7 @@ mutable					: ID {
 
 immutable				: '(' expression ')' {
 							$$ = $2;
+							$$->data.is_const = $2->data.is_const;
 						}
 						| call {
 							$$ = $1;
@@ -876,6 +889,7 @@ constant				: NUMCONST {
 							$$->type = NODE_CONST;
 							$$->data.type = TYPE_INT;
 							$$->data.int_val = $1->value.int_val;
+							$$->data.is_const = 1;
 						}
 						| CHARCONST {
 							$$ = ast_create_node();
@@ -883,6 +897,7 @@ constant				: NUMCONST {
 							$$->type = NODE_CONST;
 							$$->data.type = TYPE_CHAR;
 							$$->data.char_val = $1->value.char_val;
+							$$->data.is_const = 1;
 						}
 						| BOOLCONST {
 							$$ = ast_create_node();
@@ -890,6 +905,7 @@ constant				: NUMCONST {
 							$$->type = NODE_CONST;
 							$$->data.type = TYPE_BOOL;
 							$$->data.bool_val = $1->value.int_val;
+							$$->data.is_const = 1;
 						}
 						;
 

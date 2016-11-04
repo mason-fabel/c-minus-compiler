@@ -43,11 +43,9 @@ submit : tar
 		-F "submittedfile=@fabe0940.tar" \
 		"http://ec2-52-89-93-46.us-west-2.compute.amazonaws.com/cgi-bin/fileCapture.py"
 
+test : test-all
+
 test-all : test-arrays test-arrays2 test-basic-all test-basic-extra test-battleship test-bullsandcows test-call test-call4 test-errorloc test-errormessages test-err test-everything test-exp test-exp2 test-factorial test-factorial2 test-factorialr test-factor test-fractal test-gcd test-gcdsm test-init test-mixed test-nano test-op test-overkill test-parmtiny test-poker test-redefined test-scope test-simple test-simple-define test-small test-sudoku test-tictactoe test-tiny test-tiny-bad test-tiny-good test-tiny-scope test-tiny-type test-undefined test-uninitialized test-unused test-walsh test-whileif
-
-test : test-regression
-
-test-regression : test-arrays test-arrays2 test-basic-extra test-battleship test-bullsandcows test-call test-call4 test-everything test-exp test-exp2 test-factorial test-factorial2 test-factorialr test-factor test-fractal test-gcd test-gcdsm test-op test-poker test-redefined test-overkill test-simple test-simple-define test-sudoku test-tictactoe test-tiny-scope test-walsh test-whileif
 
 test-arrays : $(BIN)
 	sdiff --width=190 <(echo $@; ./c- -P test/arrays.c-) test/arrays.out | less

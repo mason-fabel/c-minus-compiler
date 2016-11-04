@@ -70,6 +70,7 @@ typedef struct {
 	ast_op_t op;
 	int token_class;
 	int is_array;
+	int is_const;
 	int is_func_body;
 	int bool_val;
 	int int_val;

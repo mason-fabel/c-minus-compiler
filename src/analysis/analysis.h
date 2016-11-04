@@ -6,6 +6,7 @@
 #include "error.h"
 #include "id.h"
 #include "index.h"
+#include "init.h"
 #include "return.h"
 #include "test.h"
 #include "unary.h"

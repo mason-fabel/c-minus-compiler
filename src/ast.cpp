@@ -25,6 +25,7 @@ ast_t* ast_create_node() {
 	node->data.op = OP_NONE;
 	node->data.token_class = -1;
 	node->data.is_array = 0;
+	node->data.is_const = 0;
 	node->data.is_func_body = 0;
 	node->data.int_val = 0;
 	node->data.char_val = '\0';
