@@ -3,6 +3,6 @@
 
 #include "ast.h"
 
-void sem_analysis(ast_t* tree);
+ast_t* sem_analysis(ast_t* tree);
 
 #endif /* _SEMANTIC_H_ */
