@@ -76,7 +76,13 @@ ast_t* ast_from_token(token_t* tok) {
 }
 
 void ast_add_sibling(ast_t* root, ast_t* sibling) {
-	while (root->sibling != NULL) {
+	int loops;
+
+	if (!root) return;
+
+	loops = 0;
+	while (root->sibling) {
+		loops++;
 		root = root->sibling;
 	}
 

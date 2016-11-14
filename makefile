@@ -5,7 +5,7 @@ GEN := src/scanner.cpp src/parser.cpp src/parser.h src/parser.output
 OBJ := $(addprefix obj/,$(notdir $(SRC:.cpp=.o))) obj/scanner.o obj/parser.o
 BIN := c-
 
-BFLAGS := --verbose --report=all -Wall -Werror
+BFLAGS := --verbose --report=all -Wall
 CFLAGS := -g -Wall -Wextra -Wno-switch -DYYDEBUG
 LFLAGS := -Wall -Wextra
 
@@ -39,7 +39,7 @@ tar : clean
 	tar -cf fabe0940.tar makefile src obj
 
 submit : tar
-	curl -s -S -F student=fabel -F assignment="CS445 F16 Assignment 4" \
+	curl -s -S -F student=fabel -F assignment="CS445 F16 Assignment 5" \
 		-F "submittedfile=@fabe0940.tar" \
 		"http://ec2-52-89-93-46.us-west-2.compute.amazonaws.com/cgi-bin/fileCapture.py"
 

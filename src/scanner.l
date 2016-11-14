@@ -12,6 +12,7 @@ void scanner_use_file(char* fname);
 int create_token(int token_class);
 
 extern Scope* record_types;
+extern int warnings;
 %}
 
 %option yylineno
@@ -57,7 +58,8 @@ true|false				{ return create_token(BOOLCONST); }
 %%
 
 void scanner_error(void) {
-	fprintf(stdout, "ERROR(%i): Invalid or misplaced input character: \"%c\"\n",
+	warnings++;
+	fprintf(stdout, "WARNING(%i): Invalid input character: '%c'.  Character ignored.\n",
 		yylineno, yytext[0]);
 }
 

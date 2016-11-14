@@ -6,6 +6,7 @@
 #include "ast.h"
 #include "symtab.h"
 #include "token.h"
+#include "yyerror.h"
 
 #define DEFINED 1
 
@@ -15,12 +16,13 @@ extern int yylex(void);
 extern int yydebug;
 extern int optind;
 
-void yyerror(const char* msg);
 const char* token_name(int token_class);
 
 Scope* record_types = new Scope("record");
 ast_t* syntax_tree;
 %}
+
+%error-verbose
 
 %union {
 	token_t* token;
@@ -103,6 +105,7 @@ ast_t* syntax_tree;
 %type<node> returnStmt
 %type<node> breakStmt
 %type<node> expression
+%type<node> assop
 %type<node> simpleExpression
 %type<node> andExpression
 %type<node> unaryRelExpression
@@ -151,6 +154,9 @@ declaration				: varDeclaration {
 						| recDeclaration {
 							$$ = $1;
 						}
+						| error {
+							$$ = ast_create_node();
+						}
 						;
 
 recDeclaration			: RECORD ID '{' localDeclarations '}' {
@@ -178,7 +184,9 @@ varDeclaration			: typeSpecifier varDeclList ';' {
 								decl = ast_create_node();
 								decl->lineno = node->lineno;
 								decl->type = NODE_VAR;
-								decl->data.name = strdup(node->data.name);
+								if (node->data.name) {
+									decl->data.name = strdup(node->data.name);
+								}
 								decl->data.type = $1->data.type;
 								decl->data.is_array = node->data.is_array;
 
@@ -194,6 +202,15 @@ varDeclaration			: typeSpecifier varDeclList ';' {
 
 								node = node->sibling;
 							}
+
+							yyerrok;
+						}
+						| error varDeclList ';' {
+							$$ = ast_create_node();
+						}
+						| typeSpecifier error ';' {
+							$$ = ast_create_node();
+							yyerrok;
 						}
 						;
 
@@ -207,7 +224,9 @@ scopedVarDeclaration	: scopedTypeSpecifier varDeclList ';' {
 							while (node != NULL) {
 								decl = ast_create_node();
 								decl->lineno = node->lineno;
-								decl->data.name = strdup(node->data.name);
+								if (node->data.name) {
+									decl->data.name = strdup(node->data.name);
+								}
 								decl->type = NODE_VAR;
 								decl->data.type = $1->data.type;
 								decl->data.is_array = node->data.is_array;
@@ -224,15 +243,32 @@ scopedVarDeclaration	: scopedTypeSpecifier varDeclList ';' {
 
 								node = node->sibling;
 							}
+
+							yyerrok;
+						}
+						| error varDeclList ';' {
+							$$ = ast_create_node();
+							yyerrok;
+						}
+						| scopedTypeSpecifier error ';' {
+							$$ = ast_create_node();
+							yyerrok;
 						}
 						;
 
 varDeclList				: varDeclList ',' varDeclInitialize {
 							$$ = $1;
 							ast_add_sibling($$, $3);
+							yyerrok;
+						}
+						| varDeclList ',' error {
+							$$ = $1;
 						}
 						| varDeclInitialize {
 							$$ = $1;
+						}
+						| error {
+							$$ = ast_create_node();
 						}
 						;
 
@@ -242,6 +278,13 @@ varDeclInitialize		: varDeclId {
 						| varDeclId ':' simpleExpression {
 							$$ = $1;
 							ast_add_child($$, 0, $3);
+						}
+						| error ':' simpleExpression {
+							$$ = ast_create_node();
+							yyerrok;
+						}
+						| varDeclId ':' error {
+							$$ = ast_create_node();
 						}
 						;
 
@@ -257,6 +300,13 @@ varDeclId				: ID {
 							$$->type = NODE_ID;
 							$$->data.name = strdup($1->input);
 							$$->data.is_array = 1;
+						}
+						| ID '[' error {
+							$$ = ast_create_node();
+						}
+						| error ']' {
+							$$ = ast_create_node();
+							yyerrok;
 						}
 						;
 
@@ -316,6 +366,15 @@ funDeclaration			: typeSpecifier ID '(' params ')' statement {
 							ast_add_child($$, 0, $4);
 							ast_add_child($$, 1, $6);
 						}
+						| typeSpecifier error {
+							$$ = ast_create_node();
+						}
+						| typeSpecifier ID '(' error {
+							$$ = ast_create_node();
+						}
+						| typeSpecifier ID '(' params ')' error {
+							$$ = ast_create_node();
+						}
 						| ID '(' params ')' statement {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
@@ -324,6 +383,12 @@ funDeclaration			: typeSpecifier ID '(' params ')' statement {
 							$$->data.name = strdup($1->value.str_val);
 							ast_add_child($$, 0, $3);
 							ast_add_child($$, 1, $5);
+						}
+						| ID '(' error {
+							$$ = ast_create_node();
+						}
+						| ID '(' params ')' error {
+							$$ = ast_create_node();
 						}
 						;
 
@@ -338,9 +403,16 @@ params					: paramList {
 paramList				: paramList ';' paramTypeList {
 							$$ = $1;
 							ast_add_sibling($$, $3);
+							yyerrok;
+						}
+						| paramList ';' error {
+							$$ = $1;
 						}
 						| paramTypeList {
 							$$ = $1;
+						}
+						| error {
+							$$ = ast_create_node();
 						}
 						;
 
@@ -355,7 +427,9 @@ paramTypeList			: typeSpecifier paramIdList {
 								decl = ast_create_node();
 								decl->lineno = node->lineno;
 								decl->type = NODE_PARAM;
-								decl->data.name = strdup(node->data.name);
+								if (node->data.name) {
+									decl->data.name = strdup(node->data.name);
+								}
 								decl->data.type = $1->data.type;
 								decl->data.is_array = node->data.is_array;
 
@@ -372,14 +446,24 @@ paramTypeList			: typeSpecifier paramIdList {
 								node = node->sibling;
 							}
 						}
+						| typeSpecifier error {
+							$$ = ast_create_node();
+						}
 						;
 
 paramIdList				: paramIdList ',' paramId {
 							$$ = $1;
 							ast_add_sibling($$, $3);
+							yyerrok;
+						}
+						| paramIdList ',' error {
+							$$ = $1;
 						}
 						| paramId {
 							$$ = $1;
+						}
+						| error {
+							$$ = ast_create_node();
 						}
 						;
 
@@ -395,6 +479,10 @@ paramId					: ID {
 							$$->type = NODE_ID;
 							$$->data.name = strdup($1->input);
 							$$->data.is_array = 1;
+						}
+						| error ']' {
+							$$ = ast_create_node();
+							yyerrok;
 						}
 						;
 
@@ -414,12 +502,33 @@ matchedStmt				: IF '(' simpleExpression ')' matchedStmt ELSE matchedStmt {
 							ast_add_child($$, 1, $5);
 							ast_add_child($$, 2, $7);
 						}
+						| IF '(' error {
+							$$ = ast_create_node();
+						}
+						| IF error ')' matchedStmt ELSE matchedStmt {
+							$$ = ast_create_node();
+							yyerrok;
+						}
 						| WHILE '(' simpleExpression ')' matchedStmt {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = NODE_WHILE;
 							ast_add_child($$, 0, $3);
 							ast_add_child($$, 1, $5);
+						}
+						| WHILE error ')' matchedStmt {
+							$$ = ast_create_node();
+							yyerrok;
+						}
+						| WHILE '(' error ')' matchedStmt {
+							$$ = ast_create_node();
+							yyerrok;
+						}
+						| WHILE error {
+							$$ = ast_create_node();
+						}
+						| error {
+							$$ = ast_create_node();
 						}
 						| otherStmt {
 							$$ = $1;
@@ -433,12 +542,19 @@ unmatchedStmt			: IF '(' simpleExpression ')' matchedStmt {
 							ast_add_child($$, 0, $3);
 							ast_add_child($$, 1, $5);
 						}
+						| IF error {
+							$$ = ast_create_node();
+						}
 						| IF '(' simpleExpression ')' unmatchedStmt {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = NODE_IF;
 							ast_add_child($$, 0, $3);
 							ast_add_child($$, 1, $5);
+						}
+						| IF error ')' statement {
+							$$ = ast_create_node();
+							yyerrok;
 						}
 						| IF '(' simpleExpression ')' matchedStmt ELSE unmatchedStmt {
 							$$ = ast_create_node();
@@ -448,12 +564,24 @@ unmatchedStmt			: IF '(' simpleExpression ')' matchedStmt {
 							ast_add_child($$, 1, $5);
 							ast_add_child($$, 2, $7);
 						}
+						| IF error ')' matchedStmt ELSE unmatchedStmt {
+							$$ = ast_create_node();
+							yyerrok;
+						}
 						| WHILE '(' simpleExpression ')' unmatchedStmt {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = NODE_WHILE;
 							ast_add_child($$, 0, $3);
 							ast_add_child($$, 1, $5);
+						}
+						| WHILE error ')' unmatchedStmt {
+							$$ = ast_create_node();
+							yyerrok;
+						}
+						| WHILE '(' error ')' unmatchedStmt {
+							$$ = ast_create_node();
+							yyerrok;
 						}
 						;
 
@@ -478,6 +606,15 @@ compoundStmt			: '{' localDeclarations statementList '}' {
 							$$->data.type = TYPE_VOID;
 							ast_add_child($$, 0, $2);
 							ast_add_child($$, 1, $3);
+							yyerrok;
+						}
+						| '{' error statementList '}' {
+							$$ = ast_create_node();
+							yyerrok;
+						}
+						| '{' localDeclarations error '}' {
+							$$ = ast_create_node();
+							yyerrok;
 						}
 						;
 
@@ -502,7 +639,18 @@ statementList			: statementList statement {
 							} else if ($2 == NULL) {
 								$$ = $1;
 							} else {
-								ast_add_sibling($$, $2);
+								/* This call to ast_add_siblings segfaults if the RHS
+								 * statement had a syntax error. Somewhere a sibling pointer
+								 * is set to a value which is out of bounds. I can't bloody
+								 * find the error, so instead we're not going to even try
+								 * to build the tree if an error occured. This is WRONG, but
+								 * since nobody tries to traverse the tree after a parser 
+								 * error nobody should notice.
+								 */
+								if (!errors) {
+									$$ = $1;
+									ast_add_sibling($1, $2);
+								}
 							}
 						}
 						| %empty {
@@ -512,9 +660,11 @@ statementList			: statementList statement {
 
 expressionStmt			: expression ';' {
 							$$ = $1;
+							yyerrok;
 						}
 						| ';' {
 							$$ = NULL;
+							yyerrok;
 						}
 						;
 
@@ -523,6 +673,7 @@ returnStmt				: RETURN ';' {
 							$$->lineno = $1->lineno;
 							$$->type = NODE_RETURN;
 							$$->data.type = TYPE_VOID;
+							yyerrok;
 						}
 						| RETURN expression ';' {
 							$$ = ast_create_node();
@@ -530,6 +681,7 @@ returnStmt				: RETURN ';' {
 							$$->type = NODE_RETURN;
 							$$->data.type = TYPE_VOID;
 							ast_add_child($$, 0, $2);
+							yyerrok;
 						}
 						;
 
@@ -537,53 +689,21 @@ breakStmt				: BREAK ';' {
 							$$ = ast_create_node();
 							$$->lineno = $1->lineno;
 							$$->type = NODE_BREAK;
+							yyerrok;
 						}
 						;
 
-expression				: mutable '=' expression {
+expression				: mutable assop expression {
 							$$ = ast_create_node();
 							$$->lineno = $2->lineno;
 							$$->type = NODE_ASSIGN;
-							$$->data.name = strdup($2->input);
-							$$->data.op = OP_ASS,
+							$$->data.name = $2->data.name;
+							$$->data.op = $2->data.op;
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
-						| mutable ADDASS expression {
+						| error assop error {
 							$$ = ast_create_node();
-							$$->lineno = $2->lineno;
-							$$->type = NODE_ASSIGN;
-							$$->data.name = strdup($2->input);
-							$$->data.op = OP_ADDASS,
-							ast_add_child($$, 0, $1);
-							ast_add_child($$, 1, $3);
-						}
-						| mutable SUBASS expression {
-							$$ = ast_create_node();
-							$$->lineno = $2->lineno;
-							$$->type = NODE_ASSIGN;
-							$$->data.name = strdup($2->input);
-							$$->data.op = OP_SUBASS,
-							ast_add_child($$, 0, $1);
-							ast_add_child($$, 1, $3);
-						}
-						| mutable MULASS expression {
-							$$ = ast_create_node();
-							$$->lineno = $2->lineno;
-							$$->type = NODE_ASSIGN;
-							$$->data.name = strdup($2->input);
-							$$->data.op = OP_MULASS,
-							ast_add_child($$, 0, $1);
-							ast_add_child($$, 1, $3);
-						}
-						| mutable DIVASS expression {
-							$$ = ast_create_node();
-							$$->lineno = $2->lineno;
-							$$->type = NODE_ASSIGN;
-							$$->data.name = strdup($2->input);
-							$$->data.op = OP_DIVASS,
-							ast_add_child($$, 0, $1);
-							ast_add_child($$, 1, $3);
 						}
 						| mutable INC {
 							$$ = ast_create_node();
@@ -592,6 +712,11 @@ expression				: mutable '=' expression {
 							$$->data.name = strdup($2->input);
 							$$->data.op = OP_INC,
 							ast_add_child($$, 0, $1);
+							yyerrok;
+						}
+						| error INC {
+							$$ = ast_create_node();
+							yyerrok;
 						}
 						| mutable DEC {
 							$$ = ast_create_node();
@@ -600,9 +725,46 @@ expression				: mutable '=' expression {
 							$$->data.name = strdup($2->input);
 							$$->data.op = OP_DEC,
 							ast_add_child($$, 0, $1);
+							yyerrok;
+						}
+						| error DEC {
+							$$ = ast_create_node();
+							yyerrok;
 						}
 						| simpleExpression {
 							$$ = $1;
+						}
+						;
+
+assop					: '=' {
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->data.op = OP_ASS;
+							$$->data.name = $1->input;
+						}
+						| ADDASS {
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->data.op = OP_ADDASS;
+							$$->data.name = $1->input;
+						}
+						| DIVASS {
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->data.op = OP_DIVASS;
+							$$->data.name = $1->input;
+						}
+						| MULASS {
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->data.op = OP_MULASS;
+							$$->data.name = $1->input;
+						}
+						| SUBASS {
+							$$ = ast_create_node();
+							$$->lineno = $1->lineno;
+							$$->data.op = OP_SUBASS;
+							$$->data.name = $1->input;
 						}
 						;
 
@@ -616,6 +778,9 @@ simpleExpression		: simpleExpression OR andExpression {
 								$1->data.is_const && $3->data.is_const;
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
+						}
+						| simpleExpression OR error {
+							$$ = ast_create_node();
 						}
 						| andExpression {
 							$$ = $1;
@@ -633,6 +798,9 @@ andExpression			: andExpression AND unaryRelExpression {
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
+						| andExpression AND error {
+							$$ = ast_create_node();
+						}
 						| unaryRelExpression {
 							$$ = $1;
 						}
@@ -647,6 +815,9 @@ unaryRelExpression		: NOT unaryRelExpression {
 							$$->data.is_const = $2->data.is_const;
 							ast_add_child($$, 0, $2);
 						}
+						| NOT error {
+							$$ = ast_create_node();
+						}
 						| relExpression {
 							$$ = $1;
 						}
@@ -658,6 +829,13 @@ relExpression			: sumExpression relop sumExpression {
 								$1->data.is_const && $3->data.is_const;
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
+						}
+						| sumExpression relop error {
+							$$ = $2;
+						}
+						| error relop sumExpression {
+							$$ = $2;
+							yyerrok;
 						}
 						| sumExpression {
 							$$ = $1;
@@ -715,6 +893,10 @@ sumExpression			: sumExpression sumop term {
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
 						}
+						| sumExpression sumop error {
+							$$ = $2;
+							yyerrok;
+						}
 						| term {
 							$$ = $1;
 						}
@@ -742,6 +924,9 @@ term					: term mulop unaryExpression {
 								$1->data.is_const && $3->data.is_const;
 							ast_add_child($$, 0, $1);
 							ast_add_child($$, 1, $3);
+						}
+						| term mulop error {
+							$$ = $2;
 						}
 						| unaryExpression {
 							$$ = $1;
@@ -775,6 +960,9 @@ unaryExpression			: unaryop unaryExpression {
 							$$ = $1;
 							$$->data.is_const = $2->data.is_const;
 							ast_add_child($$, 0, $2);
+						}
+						| unaryop error {
+							$$ = $1;
 						}
 						| factor {
 							$$ = $1;
@@ -849,6 +1037,13 @@ mutable					: ID {
 immutable				: '(' expression ')' {
 							$$ = $2;
 							$$->data.is_const = $2->data.is_const;
+							yyerrok;
+						}
+						| '(' error {
+							$$ = NULL;
+						}
+						| error ')' {
+							yyerrok;
 						}
 						| call {
 							$$ = $1;
@@ -865,6 +1060,9 @@ call					: ID '(' args ')' {
 							$$->data.name = strdup($1->value.str_val);
 							ast_add_child($$, 0, $3);
 						}
+						| error '(' {
+							yyerrok;
+						}
 						;
 
 args					: argList {
@@ -877,7 +1075,9 @@ args					: argList {
 
 argList					: argList ',' expression {
 							ast_add_sibling($$, $3);
+							yyerrok;
 						}
+						| argList ',' error
 						| expression {
 							$$ = $1;
 						}
@@ -910,12 +1110,6 @@ constant				: NUMCONST {
 						;
 
 %%
-
-void yyerror(const char* msg) {
-	fprintf(stdout, "parser error: %s\n", msg);
-
-	return;
-}
 
 const char* token_name(int token_class) {
 	char* name;
