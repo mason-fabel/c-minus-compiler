@@ -23,6 +23,9 @@ ast_t* ast_create_node() {
 	node->data.name = NULL;
 	node->data.type = TYPE_NONE;
 	node->data.op = OP_NONE;
+	node->data.mem.scope = SCOPE_NONE;
+	node->data.mem.size = -1;
+	node->data.mem.loc = -1;
 	node->data.token_class = -1;
 	node->data.is_array = 0;
 	node->data.is_const = 0;
@@ -113,6 +116,21 @@ const char* ast_type_string(ast_type_t type) {
 			return "type void";
 		case TYPE_NONE:
 			return "undefined type";
+	}
+
+	return "";
+}
+
+const char* ast_scope_string(ast_scope_t scope) {
+	switch(scope) {
+		case SCOPE_GLOBAL:
+			return "Global";
+		case SCOPE_LOCAL:
+			return "Local";
+		case SCOPE_NONE:
+			return "UNKNOWN";
+		case SCOPE_PARAM:
+			return "Param";
 	}
 
 	return "";

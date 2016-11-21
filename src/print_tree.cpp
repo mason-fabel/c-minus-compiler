@@ -39,7 +39,20 @@ void _ast_print(ast_t* node, int level, int sibling_num, int child_num) {
 
 	_ast_print_data(node);
 
-	if (opts.aug) fprintf(stdout, " [%s]", ast_type_string(node->data.type));
+	if (opts.aug) {
+		switch (node->type) {
+			case NODE_CALL:
+			case NODE_FUNC:
+			case NODE_ID:
+			case NODE_PARAM:
+			case NODE_VAR:
+				fprintf(stdout, " [ref: %s, size: %i, loc: %i]",
+					ast_scope_string(node->data.mem.scope),
+					node->data.mem.size, node->data.mem.loc);
+			default:
+				fprintf(stdout, " [%s]", ast_type_string(node->data.type));
+		}
+	}
 
 	fprintf(stdout, " [line: %i]", node->lineno);
 	fprintf(stdout, "\n");

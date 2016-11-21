@@ -39,7 +39,7 @@ tar : clean
 	tar -cf fabe0940.tar makefile src obj
 
 submit : tar
-	curl -s -S -F student=fabel -F assignment="CS445 F16 Assignment 5" \
+	curl -s -S -F student=fabel -F assignment="CS445 F16 Assignment 6" \
 		-F "submittedfile=@fabe0940.tar" \
 		"http://ec2-52-89-93-46.us-west-2.compute.amazonaws.com/cgi-bin/fileCapture.py"
 
