@@ -141,7 +141,7 @@ ast_t* _sem_link_io(ast_t* tree) {
 	tmp->lineno = -1;
 	tmp->type = NODE_PARAM;
 	tmp->data.name = (char*) "*dummy*";
-	tmp->data.type = TYPE_VOID;
+	tmp->data.type = TYPE_CHAR;
 	ast_add_child(curr, 0, tmp);
 
 	/* outnl */
@@ -203,6 +203,12 @@ void pre_action(ast_t* node) {
 			if (!sem_symtab.insert(node->data.name, node)) {
 				error_symbol_defined(node);
 			}
+			node->data.mem.scope = SCOPE_PARAM;
+			node->data.mem.size = node->data.is_array
+				? node->data.int_val + 1 : 1;
+			node->data.mem.loc = 2 + mem_offset.top();
+			if (node->data.is_array) node->data.mem.loc += 1;
+			mem_offset.top() += node->data.mem.size;
 			break;
 		case NODE_RETURN:
 			num_return++;
@@ -248,6 +254,9 @@ void post_action(ast_t* node) {
 				fprintf(stdout, "has no return statement.\n");
 			}
 			func_def = NULL;
+			node->data.mem.scope = SCOPE_GLOBAL;
+			node->data.mem.size = 2 + mem_offset.top();
+			node->data.mem.loc = 0;
 			mem_offset.pop();
 			break;
 		case NODE_OP:
@@ -285,7 +294,8 @@ void post_action(ast_t* node) {
 			node->data.mem.size = node->data.is_array
 				? node->data.int_val + 1 : 1;
 			node->data.mem.loc = compound_depth
-				? -1 * (2 + mem_offset.top()) : -1 * mem_offset.top();
+				? 2 + mem_offset.top() : mem_offset.top();
+			if (node->data.is_array) node->data.mem.loc += 1;
 			mem_offset.top() += node->data.mem.size;
 			break;
 		case NODE_WHILE:
