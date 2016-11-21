@@ -105,7 +105,8 @@ void _ast_print_data(ast_t* node) {
 				ast_type_string(node->data.type));
 			break;
 		case NODE_ID:
-			fprintf(stdout, "Id: %s", node->data.name);
+			fprintf(stdout, "Id: %s ", node->data.name);
+			if (node->data.is_array) fprintf(stdout, "is array ");
 			break;
 		case NODE_IF:
 			fprintf(stdout, "If");

@@ -24,6 +24,7 @@ ast_t* func_def;
 std::stack<int> mem_offset;
 
 extern int errors;
+extern int offset;
 extern int warnings;
 
 SymbolTable sem_symtab;
@@ -45,6 +46,8 @@ ast_t* sem_analysis(ast_t* tree) {
 		errors++;
 		fprintf(stdout, "ERROR(LINKER): Procedure main is not defined.\n");
 	}
+
+	offset = mem_offset.top();
 
 	return tree;
 }
@@ -197,6 +200,9 @@ void pre_action(ast_t* node) {
 			if (def != NULL && def->type != NODE_FUNC) {
 				node->data.type = def->data.type;
 				node->data.is_array = def->data.is_array;
+				node->data.mem.scope = def->data.mem.scope;
+				node->data.mem.size = def->data.mem.size;
+				node->data.mem.loc = def->data.mem.loc;
 			}
 			break;
 		case NODE_PARAM:
