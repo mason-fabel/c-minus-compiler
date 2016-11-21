@@ -1,9 +1,15 @@
+#include <stack>
 #include <stdio.h>
 #include <stdlib.h>
 #include "ast.h"
 #include "semantic.h"
 #include "symtab.h"
 #include "analysis/analysis.h"
+
+struct mem_data_t {
+	int compound_depth;
+	int offset;
+};
 
 void _sem_analysis(ast_t* node);
 void pre_action(ast_t* node);
@@ -12,8 +18,10 @@ void check_node(ast_t* node);
 ast_t* _sem_link_io(ast_t* tree);
 
 int break_depth;
+int compound_depth;
 int num_return;
 ast_t* func_def;
+std::stack<int> mem_offset;
 
 extern int errors;
 extern int warnings;
@@ -26,6 +34,8 @@ ast_t* sem_analysis(ast_t* tree) {
 	func_def = NULL;
 	break_depth = 0;
 	num_return = 0;
+	compound_depth = 0;
+	mem_offset.push(0);
 
 	tree = _sem_link_io(tree);
 	_sem_analysis(tree);
@@ -37,6 +47,25 @@ ast_t* sem_analysis(ast_t* tree) {
 	}
 
 	return tree;
+}
+
+void _sem_analysis(ast_t* node) {
+	int i;
+
+	if (node == NULL) return;
+
+	pre_action(node);
+
+	for (i = 0; i < node->num_children; i++) {
+		_sem_analysis(node->child[i]);
+	}
+
+	check_node(node);
+	post_action(node);
+
+	_sem_analysis(node->sibling);
+
+	return;
 }
 
 ast_t* _sem_link_io(ast_t* tree) {
@@ -129,25 +158,6 @@ ast_t* _sem_link_io(ast_t* tree) {
 	return head;
 }
 
-void _sem_analysis(ast_t* node) {
-	int i;
-
-	if (node == NULL) return;
-
-	pre_action(node);
-
-	for (i = 0; i < node->num_children; i++) {
-		_sem_analysis(node->child[i]);
-	}
-
-	check_node(node);
-	post_action(node);
-
-	_sem_analysis(node->sibling);
-
-	return;
-}
-
 void pre_action(ast_t* node) {
 	char* msg;
 	ast_t* def;
@@ -165,6 +175,7 @@ void pre_action(ast_t* node) {
 			msg = (char*) malloc(sizeof(char) * 80);
 			sprintf(msg, "compound stmt %i", node->lineno);
 			if (!node->data.is_func_body) sem_symtab.enter(std::string(msg));
+			compound_depth++;
 			break;
 		case NODE_IF:
 			node->data.type = TYPE_VOID;
@@ -179,6 +190,7 @@ void pre_action(ast_t* node) {
 			sem_symtab.enter(std::string(msg));
 			func_def = node;
 			num_return = 0;
+			mem_offset.push(0);
 			break;
 		case NODE_ID:
 			def = (ast_t*) sem_symtab.lookup(std::string(node->data.name));
@@ -223,6 +235,7 @@ void post_action(ast_t* node) {
 			break;
 		case NODE_COMPOUND:
 			if (!node->data.is_func_body) sem_symtab.leave();
+			compound_depth--;
 			break;
 		case NODE_FUNC:
 			sem_symtab.leave();
@@ -235,6 +248,7 @@ void post_action(ast_t* node) {
 				fprintf(stdout, "has no return statement.\n");
 			}
 			func_def = NULL;
+			mem_offset.pop();
 			break;
 		case NODE_OP:
 			switch (node->data.op) {
@@ -267,6 +281,12 @@ void post_action(ast_t* node) {
 			if (!sem_symtab.insert(node->data.name, node)) {
 				error_symbol_defined(node);
 			}
+			node->data.mem.scope = compound_depth ? SCOPE_LOCAL : SCOPE_GLOBAL;
+			node->data.mem.size = node->data.is_array
+				? node->data.int_val + 1 : 1;
+			node->data.mem.loc = compound_depth
+				? -1 * (2 + mem_offset.top()) : -1 * mem_offset.top();
+			mem_offset.top() += node->data.mem.size;
 			break;
 		case NODE_WHILE:
 			break_depth--;

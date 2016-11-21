@@ -6,7 +6,7 @@ OBJ := $(addprefix obj/,$(notdir $(SRC:.cpp=.o))) obj/scanner.o obj/parser.o
 BIN := c-
 
 BFLAGS := --verbose --report=all -Wall
-CFLAGS := -g -Wall -Wextra -Wno-switch -DYYDEBUG
+CFLAGS := -std=c++98 -g -Wall -Wextra -Wno-switch -DYYDEBUG
 LFLAGS := -Wall -Wextra
 
 .PHONY : clean submit
