@@ -41,18 +41,14 @@ void _ast_print(ast_t* node, int level, int sibling_num, int child_num) {
 
 	if (opts.aug) {
 		switch (node->type) {
-			case NODE_FUNC:
-				fprintf(stdout, " [ref: %s, size: %i, loc: %i]",
-					ast_scope_string(node->data.mem.scope),
-					-1 * node->data.mem.size, -1 * node->data.mem.loc);
-				break;
 			case NODE_CALL:
+			case NODE_FUNC:
 			case NODE_ID:
 			case NODE_PARAM:
 			case NODE_VAR:
 				fprintf(stdout, " [ref: %s, size: %i, loc: %i]",
 					ast_scope_string(node->data.mem.scope),
-					node->data.mem.size, -1 * node->data.mem.loc);
+					node->data.mem.size, node->data.mem.loc);
 				break;
 		}
 

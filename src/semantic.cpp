@@ -171,8 +171,12 @@ void pre_action(ast_t* node) {
 			break;
 		case NODE_CALL:
 			def = (ast_t*) sem_symtab.lookup(std::string(node->data.name));
-			if (def != NULL) node->data.type = def->data.type;
-			else error_func_defined(node);
+			if (def != NULL) {
+				node->data.type = def->data.type;
+				node->data.mem.size = def->data.mem.size;
+			} else {
+				error_func_defined(node);
+			}
 			break;
 		case NODE_COMPOUND:
 			msg = (char*) malloc(sizeof(char) * 80);
@@ -188,6 +192,7 @@ void pre_action(ast_t* node) {
 			if (!sem_symtab.insert(node->data.name, node)) {
 				error_symbol_defined(node);
 			}
+			node->data.mem.size = -3;
 			msg = (char*) malloc(sizeof(char) * 80);
 			sprintf(msg, "function %s", node->data.name);
 			sem_symtab.enter(std::string(msg));
@@ -197,9 +202,13 @@ void pre_action(ast_t* node) {
 			break;
 		case NODE_ID:
 			def = (ast_t*) sem_symtab.lookup(std::string(node->data.name));
-			if (def != NULL && def->type != NODE_FUNC) {
+			if (def && def->type != NODE_FUNC) {
 				node->data.type = def->data.type;
 				node->data.is_array = def->data.is_array;
+				node->data.mem.scope = def->data.mem.scope;
+				node->data.mem.size = def->data.mem.size;
+				node->data.mem.loc = def->data.mem.loc;
+			} else if (def && def->type == NODE_FUNC) {
 				node->data.mem.scope = def->data.mem.scope;
 				node->data.mem.size = def->data.mem.size;
 				node->data.mem.loc = def->data.mem.loc;
@@ -208,13 +217,11 @@ void pre_action(ast_t* node) {
 		case NODE_PARAM:
 			if (!sem_symtab.insert(node->data.name, node)) {
 				error_symbol_defined(node);
+			} else {
+				node->data.mem.loc = mem_offset.top() - 2;
+				mem_offset.top() -= node->data.mem.size;
 			}
 			node->data.mem.scope = SCOPE_PARAM;
-			node->data.mem.size = node->data.is_array
-				? node->data.int_val + 1 : 1;
-			node->data.mem.loc = 2 + mem_offset.top();
-			if (node->data.is_array) node->data.mem.loc += 1;
-			mem_offset.top() += node->data.mem.size;
 			break;
 		case NODE_RETURN:
 			num_return++;
@@ -261,7 +268,7 @@ void post_action(ast_t* node) {
 			}
 			func_def = NULL;
 			node->data.mem.scope = SCOPE_GLOBAL;
-			node->data.mem.size = 2 + mem_offset.top();
+			node->data.mem.size = mem_offset.top() - 2;
 			node->data.mem.loc = 0;
 			mem_offset.pop();
 			break;
@@ -295,14 +302,39 @@ void post_action(ast_t* node) {
 		case NODE_VAR:
 			if (!sem_symtab.insert(node->data.name, node)) {
 				error_symbol_defined(node);
+				node->data.mem.scope = SCOPE_LOCAL;
+				node->data.mem.size = node->data.is_array
+					? node->data.int_val + 1 : 1;
+				node->data.mem.loc = node->data.is_array ? -1 : 0;
+			} else {
+				if (node->data.is_static) {
+					std::stack<int> reverse;
+					if (node->data.is_array) node->data.mem.loc -= 1;
+					while (!mem_offset.empty()) {
+						reverse.push(mem_offset.top());
+						mem_offset.pop();
+					}
+					node->data.mem.scope = SCOPE_STATIC;
+					node->data.mem.size = node->data.is_array
+						? node->data.int_val + 1 : 1;
+					node->data.mem.loc = reverse.top();
+					if (node->data.is_array) node->data.mem.loc -= 1;
+					reverse.top() -= node->data.mem.size;
+					while (!reverse.empty()) {
+						mem_offset.push(reverse.top());
+						reverse.pop();
+					}
+				} else {
+					node->data.mem.scope = compound_depth
+						? SCOPE_LOCAL : SCOPE_GLOBAL;
+					node->data.mem.size = node->data.is_array
+						? node->data.int_val + 1 : 1;
+					node->data.mem.loc = compound_depth
+						? mem_offset.top() - 2 : mem_offset.top();
+					if (node->data.is_array) node->data.mem.loc -= 1;
+					mem_offset.top() -= node->data.mem.size;
+				}
 			}
-			node->data.mem.scope = compound_depth ? SCOPE_LOCAL : SCOPE_GLOBAL;
-			node->data.mem.size = node->data.is_array
-				? node->data.int_val + 1 : 1;
-			node->data.mem.loc = compound_depth
-				? 2 + mem_offset.top() : mem_offset.top();
-			if (node->data.is_array) node->data.mem.loc += 1;
-			mem_offset.top() += node->data.mem.size;
 			break;
 		case NODE_WHILE:
 			break_depth--;

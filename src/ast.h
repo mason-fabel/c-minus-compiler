@@ -69,6 +69,7 @@ typedef enum {
 	SCOPE_LOCAL,
 	SCOPE_NONE,
 	SCOPE_PARAM,
+	SCOPE_STATIC,
 } ast_scope_t;
 
 typedef struct {
@@ -86,6 +87,7 @@ typedef struct {
 	int is_array;
 	int is_const;
 	int is_func_body;
+	int is_static;
 	int bool_val;
 	int int_val;
 	char char_val;

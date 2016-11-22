@@ -232,6 +232,7 @@ scopedVarDeclaration	: scopedTypeSpecifier varDeclList ';' {
 								decl->data.type = $1->data.type;
 								decl->data.is_array = node->data.is_array;
 								decl->data.int_val = node->data.int_val;
+								decl->data.is_static = $1->data.is_static;
 
 								if (node->child[0]) {
 									ast_add_child(decl, 0, node->child[0]);
@@ -315,6 +316,7 @@ varDeclId				: ID {
 
 scopedTypeSpecifier		: STATIC typeSpecifier {
 							$$ = $2;
+							$$->data.is_static = 1;
 						}
 						| typeSpecifier {
 							$$ = $1;

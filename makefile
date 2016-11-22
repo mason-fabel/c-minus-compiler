@@ -35,7 +35,8 @@ clean :
 
 rebuild : clean $(BIN)
 
-tar : clean
+tar :
+	rm -f obj/*.o
 	tar -cf fabe0940.tar makefile src obj
 
 submit : tar
