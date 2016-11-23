@@ -1,6 +1,7 @@
-#include <stack>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stack>
+#include <vector>
 #include "ast.h"
 #include "semantic.h"
 #include "symtab.h"
@@ -22,6 +23,7 @@ int compound_depth;
 int num_return;
 ast_t* func_def;
 std::stack<int> mem_offset;
+std::vector<ast_t*> recursive_calls;
 
 extern int errors;
 extern int offset;
@@ -171,11 +173,14 @@ void pre_action(ast_t* node) {
 			break;
 		case NODE_CALL:
 			def = (ast_t*) sem_symtab.lookup(std::string(node->data.name));
-			if (def != NULL) {
+			if (def == NULL) {
+				error_func_defined(node);
+			} else if (def == func_def) {
+				node->data.type = def->data.type;
+				recursive_calls.push_back(node);
+			} else {
 				node->data.type = def->data.type;
 				node->data.mem.size = def->data.mem.size;
-			} else {
-				error_func_defined(node);
 			}
 			break;
 		case NODE_COMPOUND:
@@ -192,7 +197,6 @@ void pre_action(ast_t* node) {
 			if (!sem_symtab.insert(node->data.name, node)) {
 				error_symbol_defined(node);
 			}
-			node->data.mem.size = -3;
 			msg = (char*) malloc(sizeof(char) * 80);
 			sprintf(msg, "function %s", node->data.name);
 			sem_symtab.enter(std::string(msg));
@@ -210,7 +214,8 @@ void pre_action(ast_t* node) {
 				node->data.mem.loc = def->data.mem.loc;
 			} else if (def && def->type == NODE_FUNC) {
 				node->data.mem.scope = def->data.mem.scope;
-				node->data.mem.size = def->data.mem.size;
+				if (def == func_def) recursive_calls.push_back(node);
+				else node->data.mem.size = def->data.mem.size;
 				node->data.mem.loc = def->data.mem.loc;
 			}
 			break;
@@ -236,6 +241,8 @@ void pre_action(ast_t* node) {
 }
 
 void post_action(ast_t* node) {
+	std::vector<ast_t*>::iterator call;
+
 	switch (node->type) {
 		case NODE_ASSIGN:
 			switch (node->data.op) {
@@ -257,7 +264,6 @@ void post_action(ast_t* node) {
 			compound_depth--;
 			break;
 		case NODE_FUNC:
-			sem_symtab.leave();
 			if (func_def->data.type != TYPE_VOID && func_def->lineno != -1
 				&& num_return < 1
 			) {
@@ -266,11 +272,21 @@ void post_action(ast_t* node) {
 					ast_type_string(node->data.type), node->data.name);
 				fprintf(stdout, "has no return statement.\n");
 			}
-			func_def = NULL;
+
 			node->data.mem.scope = SCOPE_GLOBAL;
 			node->data.mem.size = mem_offset.top() - 2;
 			node->data.mem.loc = 0;
+
+			call = recursive_calls.begin();
+			while (call != recursive_calls.end()) {
+				(*call)->data.mem.size = node->data.mem.size;
+				call++;
+			}
+			recursive_calls.clear();
+
+			sem_symtab.leave();
 			mem_offset.pop();
+			func_def = NULL;
 			break;
 		case NODE_OP:
 			switch (node->data.op) {

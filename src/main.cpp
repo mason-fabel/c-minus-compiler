@@ -89,8 +89,8 @@ int main(int argc, char** argv) {
 
 	if (flags.print_aug_ast) ast_print(syntax_tree, TRUE);
 
-	end:
 	fprintf(stdout, "Offset for end of global space: %i\n", offset);
+	end:
 	fprintf(stdout, "Number of warnings: %i\n", warnings);
 	fprintf(stdout, "Number of errors: %i\n", errors);
 
