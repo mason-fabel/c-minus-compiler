@@ -39,7 +39,21 @@ void _ast_print(ast_t* node, int level, int sibling_num, int child_num) {
 
 	_ast_print_data(node);
 
-	if (opts.aug) fprintf(stdout, " [%s]", ast_type_string(node->data.type));
+	if (opts.aug) {
+		switch (node->type) {
+			case NODE_CALL:
+			case NODE_FUNC:
+			case NODE_ID:
+			case NODE_PARAM:
+			case NODE_VAR:
+				fprintf(stdout, " [ref: %s, size: %i, loc: %i]",
+					ast_scope_string(node->data.mem.scope),
+					node->data.mem.size, node->data.mem.loc);
+				break;
+		}
+
+		fprintf(stdout, " [%s]", ast_type_string(node->data.type));
+	}
 
 	fprintf(stdout, " [line: %i]", node->lineno);
 	fprintf(stdout, "\n");
@@ -87,7 +101,8 @@ void _ast_print_data(ast_t* node) {
 				ast_type_string(node->data.type));
 			break;
 		case NODE_ID:
-			fprintf(stdout, "Id: %s", node->data.name);
+			fprintf(stdout, "Id: %s ", node->data.name);
+			if (node->data.is_array) fprintf(stdout, "is array ");
 			break;
 		case NODE_IF:
 			fprintf(stdout, "If");
@@ -100,7 +115,6 @@ void _ast_print_data(ast_t* node) {
 		case NODE_PARAM:
 			fprintf(stdout, "Param %s ", node->data.name);
 			if (node->data.is_array) fprintf(stdout, "is array ");
-			fprintf(stdout, "of %s", ast_type_string(node->data.type));
 			break;
 		case NODE_RECORD:
 			fprintf(stdout, "Record %s ", node->data.name);
@@ -125,7 +139,6 @@ void _ast_print_data(ast_t* node) {
 		case NODE_VAR:
 			fprintf(stdout, "Var %s ", node->data.name);
 			if (node->data.is_array) fprintf(stdout, "is array ");
-			fprintf(stdout, "of %s", ast_type_string(node->data.type));
 			break;
 		case NODE_WHILE:
 			fprintf(stdout, "While");

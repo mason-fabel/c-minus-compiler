@@ -189,6 +189,7 @@ varDeclaration			: typeSpecifier varDeclList ';' {
 								}
 								decl->data.type = $1->data.type;
 								decl->data.is_array = node->data.is_array;
+								decl->data.int_val = node->data.int_val;
 
 								if (node->child[0]) {
 									ast_add_child(decl, 0, node->child[0]);
@@ -230,6 +231,8 @@ scopedVarDeclaration	: scopedTypeSpecifier varDeclList ';' {
 								decl->type = NODE_VAR;
 								decl->data.type = $1->data.type;
 								decl->data.is_array = node->data.is_array;
+								decl->data.int_val = node->data.int_val;
+								decl->data.is_static = $1->data.is_static;
 
 								if (node->child[0]) {
 									ast_add_child(decl, 0, node->child[0]);
@@ -300,6 +303,7 @@ varDeclId				: ID {
 							$$->type = NODE_ID;
 							$$->data.name = strdup($1->input);
 							$$->data.is_array = 1;
+							$$->data.int_val = $3->value.int_val;
 						}
 						| ID '[' error {
 							$$ = ast_create_node();
@@ -312,6 +316,7 @@ varDeclId				: ID {
 
 scopedTypeSpecifier		: STATIC typeSpecifier {
 							$$ = $2;
+							$$->data.is_static = 1;
 						}
 						| typeSpecifier {
 							$$ = $1;

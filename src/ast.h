@@ -64,14 +64,30 @@ typedef enum {
 	OP_SUBSC,
 } ast_op_t;
 
+typedef enum {
+	SCOPE_GLOBAL,
+	SCOPE_LOCAL,
+	SCOPE_NONE,
+	SCOPE_PARAM,
+	SCOPE_STATIC,
+} ast_scope_t;
+
+typedef struct {
+	ast_scope_t scope;
+	int size;
+	int loc;
+} ast_mem_t;
+
 typedef struct {
 	char* name;
 	ast_type_t type;
 	ast_op_t op;
+	ast_mem_t mem;
 	int token_class;
 	int is_array;
 	int is_const;
 	int is_func_body;
+	int is_static;
 	int bool_val;
 	int int_val;
 	char char_val;
@@ -93,5 +109,6 @@ void ast_add_child(ast_t* root, int index, ast_t* child);
 ast_t* ast_create_node();
 ast_t* ast_from_token(token_t* tok);
 const char* ast_type_string(ast_type_t type);
+const char* ast_scope_string(ast_scope_t scope);
 
 #endif /* _AST_H_ */

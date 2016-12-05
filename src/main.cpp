@@ -19,8 +19,9 @@ extern int optind;
 extern ast_t* syntax_tree;
 extern SymbolTable sem_symtab;
 
-int warnings;
 int errors;
+int offset;
+int warnings;
 flags_t flags;
 
 int main(int argc, char** argv) {
@@ -31,8 +32,9 @@ int main(int argc, char** argv) {
 	flags.symtab_debug = 0;
 	flags.print_ast = 0;
 	flags.print_aug_ast = 0;
-	warnings = 0;
 	errors = 0;
+	offset = 0;
+	warnings = 0;
 
 	initErrorProcessing();
 
@@ -87,6 +89,7 @@ int main(int argc, char** argv) {
 
 	if (flags.print_aug_ast) ast_print(syntax_tree, TRUE);
 
+	fprintf(stdout, "Offset for end of global space: %i\n", offset);
 	end:
 	fprintf(stdout, "Number of warnings: %i\n", warnings);
 	fprintf(stdout, "Number of errors: %i\n", errors);

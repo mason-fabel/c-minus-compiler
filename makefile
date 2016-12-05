@@ -6,7 +6,7 @@ OBJ := $(addprefix obj/,$(notdir $(SRC:.cpp=.o))) obj/scanner.o obj/parser.o
 BIN := c-
 
 BFLAGS := --verbose --report=all -Wall
-CFLAGS := -g -Wall -Wextra -Wno-switch -DYYDEBUG
+CFLAGS := -std=c++98 -g -Wall -Wextra -Wno-switch -DYYDEBUG
 LFLAGS := -Wall -Wextra
 
 .PHONY : clean submit
@@ -35,11 +35,12 @@ clean :
 
 rebuild : clean $(BIN)
 
-tar : clean
+tar :
+	rm -f obj/*.o
 	tar -cf fabe0940.tar makefile src obj
 
 submit : tar
-	curl -s -S -F student=fabel -F assignment="CS445 F16 Assignment 5" \
+	curl -s -S -F student=fabel -F assignment="CS445 F16 Assignment 6" \
 		-F "submittedfile=@fabe0940.tar" \
 		"http://ec2-52-89-93-46.us-west-2.compute.amazonaws.com/cgi-bin/fileCapture.py"
 
