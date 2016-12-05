@@ -214,8 +214,17 @@ void pre_action(ast_t* node) {
 				node->data.mem.loc = def->data.mem.loc;
 			} else if (def && def->type == NODE_FUNC) {
 				node->data.mem.scope = def->data.mem.scope;
-				if (def == func_def) recursive_calls.push_back(node);
-				else node->data.mem.size = def->data.mem.size;
+				if (def == func_def) {
+					/* I'm not sure why SCOPE_LOCAL and -3 are the right values
+					 * but there's really no reasonable value for an ID that
+					 * references a function and this matches the given output
+					 */
+					// recursive_calls.push_back(node);
+					node->data.mem.scope = SCOPE_LOCAL;
+					node->data.mem.size = -3;
+				} else {
+					node->data.mem.size = def->data.mem.size;
+				}
 				node->data.mem.loc = def->data.mem.loc;
 			}
 			break;
