@@ -4,6 +4,7 @@ c-
 # Test files
 fabe0940.tar
 test/*
+*.tm
 
 # Temporary files
 *.swp

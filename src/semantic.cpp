@@ -12,18 +12,18 @@ struct mem_data_t {
 	int offset;
 };
 
-void _sem_analysis(ast_t* node);
-void pre_action(ast_t* node);
-void post_action(ast_t* node);
-void check_node(ast_t* node);
-ast_t* _sem_link_io(ast_t* tree);
+static void _sem_analysis(ast_t* node);
+static void pre_action(ast_t* node);
+static void post_action(ast_t* node);
+static void check_node(ast_t* node);
+static ast_t* _sem_link_io(ast_t* tree);
 
-int break_depth;
-int compound_depth;
-int num_return;
-ast_t* func_def;
-std::stack<int> mem_offset;
-std::vector<ast_t*> recursive_calls;
+static int break_depth;
+static int compound_depth;
+static int num_return;
+static ast_t* func_def;
+static std::stack<int> mem_offset;
+static std::vector<ast_t*> recursive_calls;
 
 extern int errors;
 extern int offset;
