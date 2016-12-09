@@ -120,12 +120,9 @@ void traverse(ast_t* node) {
 			break;
 
 		case NODE_IF:
-			int has_else;
 			int jump_addr;
 			int then_addr;
 			int else_addr;
-
-			has_else = (int) node->child[2];
 
 			emitComment("IF");
 			traverse(node->child[0]);
@@ -138,7 +135,7 @@ void traverse(ast_t* node) {
 				"Jump past THEN if false [BACKPATCH]");
 			emitBackup(jump_addr);
 
-			if (has_else) {
+			if (node->child[2]) {
 				emitComment("ELSE");
 				else_addr = emitSkip(1);
 				traverse(node->child[2]);
