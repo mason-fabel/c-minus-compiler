@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-#define NONE -1
+#define NONE  6
 #define GP    0
 #define FP    1
 #define RT    2
