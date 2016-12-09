@@ -99,6 +99,11 @@ void traverse(ast_t* node) {
 				case TYPE_INT:
 					emitRM("LDC", AC, node->data.int_val, NONE,
 						"Load integer constant");
+					break;
+				case TYPE_BOOL:
+					emitRM("LDC", AC, node->data.bool_val, NONE,
+						"Load boolean constant");
+					break;
 			}
 			break;
 
