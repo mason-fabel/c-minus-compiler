@@ -72,54 +72,78 @@ void traverse(ast_t* node) {
 
 	switch (node->type) {
 		case NODE_ASSIGN:
-			ast_t* var;
-
-			var = node->child[0];
+			if (node->child[0]->type == NODE_ID) {
+				emitRM("LD", AC1, node->child[0]->data.mem.loc,
+					base_reg(node->child[0]),
+					"Load variable", node->child[0]->data.name);
+				emitRM("ST", AC, tmp_offset--, FP, "Store value");
+			} else if (node->child[0]->type == NODE_OP) {
+				traverse(node->child[0]->child[1]);
+				emitRM("LDC", AC1, node->child[0]->child[0]->data.mem.loc, NONE,
+					"Load offset of array",
+					node->child[0]->child[0]->data.name);
+				emitRO("SUB", AC1, AC1, AC, "Find offset of element");
+				emitRM("LDA", AC, 0, FP, "Copy FP to AC");
+				emitRO("ADD", AC1, AC1, AC, "Find address of element");
+				emitRM("LDA", AC, 0, AC1, "OP [");
+				emitRM("ST", AC, tmp_offset--, FP, "Store value");
+			}
 
 			switch (node->data.op) {
 				case OP_ASS:
 					traverse(node->child[1]);
+					++tmp_offset; // pop value
 					break;
 				case OP_ADDASS:
 					traverse(node->child[1]);
-					emitRM("LD", AC1, var->data.mem.loc, base_reg(var),
-						"Load variable", var->data.name);
+					emitRM("LD", AC1, ++tmp_offset, FP, "Load value");
 					emitRO("ADD", AC, AC1, AC, "ADD for OP +=");
 					break;
 				case OP_DIVASS:
 					traverse(node->child[1]);
-					emitRM("LD", AC1, var->data.mem.loc, base_reg(var),
-						"Load variable", var->data.name);
+					emitRM("LD", AC1, ++tmp_offset, FP, "Load value");
 					emitRO("DIV", AC, AC1, AC, "DIV for OP /=");
 					break;
 				case OP_MULASS:
 					traverse(node->child[1]);
-					emitRM("LD", AC1, var->data.mem.loc, base_reg(var),
-						"Load variable", var->data.name);
+					emitRM("LD", AC1, ++tmp_offset, FP, "Load value");
 					emitRO("MUL", AC, AC1, AC, "MUL for OP *=");
 					break;
 				case OP_SUBASS:
 					traverse(node->child[1]);
-					emitRM("LD", AC1, var->data.mem.loc, base_reg(var),
-						"Load variable", var->data.name);
+					emitRM("LD", AC1, ++tmp_offset, FP, "Load value");
 					emitRO("SUB", AC, AC1, AC, "SUB for OP -=");
 					break;
 				case OP_INC:
-					emitRM("LD", AC, var->data.mem.loc, base_reg(var),
-						"Load variable", var->data.name);
-					emitRM("LDC", AC1, 1, NONE, "Load integer constant");
-					emitRO("ADD", AC, AC, AC1, "ADD for OP ++");
+					emitRM("LD", AC1, ++tmp_offset, FP, "Load value");
+					emitRM("LDC", AC, 1, NONE, "Load integer constant");
+					emitRO("ADD", AC, AC1, AC, "ADD for OP ++");
 					break;
 				case OP_DEC:
-					emitRM("LD", AC, var->data.mem.loc, base_reg(var),
-						"Load variable", var->data.name);
-					emitRM("LDC", AC1, 1, NONE, "Load integer constant");
-					emitRO("SUB", AC, AC, AC1, "SUB for OP --");
+					emitRM("LD", AC1, ++tmp_offset, FP, "Load value");
+					emitRM("LDC", AC, 1, NONE, "Load integer constant");
+					emitRO("SUB", AC, AC1, AC, "SUB for OP --");
 					break;
 			}
 
-			emitRM("ST", AC, var->data.mem.loc, base_reg(var),
-				"Store variable", var->data.name);
+			if (node->child[0]->type == NODE_ID) {
+				emitRM("ST", AC, node->child[0]->data.mem.loc,
+					base_reg(node->child[0]),
+					"Store variable", node->child[0]->data.name);
+			} else if (node->child[0]->type == NODE_OP) {
+				emitRM("ST", AC, tmp_offset--, FP, "Store RHS");
+				traverse(node->child[0]->child[1]);
+				emitRM("LDC", AC1, node->child[0]->child[0]->data.mem.loc, NONE,
+					"Load offset of array",
+					node->child[0]->child[0]->data.name);
+				emitRO("SUB", AC1, AC1, AC, "Find offset of element");
+				emitRM("LDA", AC, 0, FP, "Copy FP to AC");
+				emitRO("ADD", AC1, AC1, AC, "Find address of element");
+				emitRM("LD", AC, ++tmp_offset, FP, "Load RHS");
+				emitRM("ST", AC, 0, AC1,
+					"Store element in array",
+					node->child[0]->child[0]->data.name);
+			}
 
 			break;
 
@@ -183,8 +207,13 @@ void traverse(ast_t* node) {
 			break;
 
 		case NODE_ID:
-			emitRM("LD", AC, node->data.mem.loc, base_reg(node),
-				"Load variable", node->data.name);
+			if (node->data.is_array) {
+				emitRM("HALT", NONE, NONE, NONE,
+					"NODE_ID.is_array not implemented");
+			} else {
+				emitRM("LD", AC, node->data.mem.loc, base_reg(node),
+					"Load variable", node->data.name);
+			}
 			break;
 
 		case NODE_IF:
@@ -295,29 +324,163 @@ void traverse(ast_t* node) {
 			break;
 
 		case NODE_OP:
-			if (node->child[0]) {
-				traverse(node->child[0]);
-				emitRM("ST", AC, tmp_offset--, FP, "Store LHS");
-			}
-
-			if (node->child[1]) {
-				traverse(node->child[1]);
-				emitRM("ST", AC, tmp_offset--, FP, "Store RHS");
-			}
-
-			if (node->child[0]) emitRM("LD", AC1, ++tmp_offset, FP, "Load RHS");
-			if (node->child[1]) emitRM("LD", AC, ++tmp_offset, FP, "Load LHS");
-
 			switch (node->data.op) {
 				case OP_ADD:
+					traverse(node->child[0]);
+					emitRM("ST", AC, tmp_offset--, FP, "Store LHS");
+					traverse(node->child[1]);
+					emitRM("ST", AC, tmp_offset--, FP, "Store RHS");
+					emitRM("LD", AC1, ++tmp_offset, FP, "Load RHS");
+					emitRM("LD", AC, ++tmp_offset, FP, "Load LHS");
 					emitRO("ADD", AC, AC, AC1, "OP +");
 					break;
+				case OP_AND:
+					traverse(node->child[0]);
+					emitRM("ST", AC, tmp_offset--, FP, "Store LHS");
+					traverse(node->child[1]);
+					emitRM("ST", AC, tmp_offset--, FP, "Store RHS");
+					emitRM("LD", AC1, ++tmp_offset, FP, "Load RHS");
+					emitRM("LD", AC, ++tmp_offset, FP, "Load LHS");
+					emitRO("AND", AC, AC, AC1, "OP and");
+					break;
+				case OP_DIV:
+					traverse(node->child[0]);
+					emitRM("ST", AC, tmp_offset--, FP, "Store LHS");
+					traverse(node->child[1]);
+					emitRM("ST", AC, tmp_offset--, FP, "Store RHS");
+					emitRM("LD", AC1, ++tmp_offset, FP, "Load RHS");
+					emitRM("LD", AC, ++tmp_offset, FP, "Load LHS");
+					emitRO("DIV", AC, AC, AC1, "OP /");
+					break;
+				case OP_EQ:
+					traverse(node->child[0]);
+					emitRM("ST", AC, tmp_offset--, FP, "Store LHS");
+					traverse(node->child[1]);
+					emitRM("ST", AC, tmp_offset--, FP, "Store RHS");
+					emitRM("LD", AC1, ++tmp_offset, FP, "Load RHS");
+					emitRM("LD", AC, ++tmp_offset, FP, "Load LHS");
+					emitRO("TEQ", AC, AC, AC1, "OP ==");
+					break;
+				case OP_GRT:
+					traverse(node->child[0]);
+					emitRM("ST", AC, tmp_offset--, FP, "Store LHS");
+					traverse(node->child[1]);
+					emitRM("ST", AC, tmp_offset--, FP, "Store RHS");
+					emitRM("LD", AC1, ++tmp_offset, FP, "Load RHS");
+					emitRM("LD", AC, ++tmp_offset, FP, "Load LHS");
+					emitRO("TGT", AC, AC, AC1, "OP >");
+					break;
+				case OP_GRTEQ:
+					traverse(node->child[0]);
+					emitRM("ST", AC, tmp_offset--, FP, "Store LHS");
+					traverse(node->child[1]);
+					emitRM("ST", AC, tmp_offset--, FP, "Store RHS");
+					emitRM("LD", AC1, ++tmp_offset, FP, "Load RHS");
+					emitRM("LD", AC, ++tmp_offset, FP, "Load LHS");
+					emitRO("TGE", AC, AC, AC1, "OP >=");
+					break;
+				case OP_LESS:
+					traverse(node->child[0]);
+					emitRM("ST", AC, tmp_offset--, FP, "Store LHS");
+					traverse(node->child[1]);
+					emitRM("ST", AC, tmp_offset--, FP, "Store RHS");
+					emitRM("LD", AC1, ++tmp_offset, FP, "Load RHS");
+					emitRM("LD", AC, ++tmp_offset, FP, "Load LHS");
+					emitRO("TLT", AC, AC, AC1, "OP <");
+					break;
 				case OP_LESSEQ:
+					traverse(node->child[0]);
+					emitRM("ST", AC, tmp_offset--, FP, "Store LHS");
+					traverse(node->child[1]);
+					emitRM("ST", AC, tmp_offset--, FP, "Store RHS");
+					emitRM("LD", AC1, ++tmp_offset, FP, "Load RHS");
+					emitRM("LD", AC, ++tmp_offset, FP, "Load LHS");
 					emitRO("TLE", AC, AC, AC1, "OP <=");
 					break;
+				case OP_MOD:
+					traverse(node->child[0]);
+					emitRM("ST", AC, tmp_offset--, FP, "Store LHS");
+					traverse(node->child[1]);
+					emitRM("ST", AC, tmp_offset--, FP, "Store RHS");
+					emitRM("LD", AC1, ++tmp_offset, FP, "Load RHS");
+					emitRM("LD", AC, ++tmp_offset, FP, "Load LHS");
+					emitRO("TLT", AC2, AC, AC1, "OP % CHECK");
+					emitRM("JNZ", AC2, 2, PC, "Jump past OP % if true");
+					emitRO("SUB", AC, AC, AC1, "SUB RHS from LHS");
+					emitRM("LDA", PC, -4, PC, "Loop to CHECK");
+					break;
+				case OP_MUL:
+					traverse(node->child[0]);
+					emitRM("ST", AC, tmp_offset--, FP, "Store LHS");
+					traverse(node->child[1]);
+					emitRM("ST", AC, tmp_offset--, FP, "Store RHS");
+					emitRM("LD", AC1, ++tmp_offset, FP, "Load RHS");
+					emitRM("LD", AC, ++tmp_offset, FP, "Load LHS");
+					emitRO("MUL", AC, AC, AC1, "OP *");
+					break;
+				case OP_NEG:
+					traverse(node->child[0]);
+					emitRM("ST", AC, tmp_offset--, FP, "Store LHS");
+					emitRM("LD", AC, ++tmp_offset, FP, "Load LHS");
+					emitRM("LDC", AC1, -1, NONE, "Load integer constant");
+					emitRO("MUL", AC, AC, AC1, "UNARY OP -");
+					break;
+				case OP_NOT:
+					traverse(node->child[0]);
+					emitRM("ST", AC, tmp_offset--, FP, "Store LHS");
+					emitRM("LD", AC, ++tmp_offset, FP, "Load LHS");
+					emitRM("LDC", AC1, 0, NONE, "Load integer constant");
+					emitRO("TEQ", AC, AC, AC1, "UNARY OP not");
+					break;
+				case OP_NOTEQ:
+					traverse(node->child[0]);
+					emitRM("ST", AC, tmp_offset--, FP, "Store LHS");
+					traverse(node->child[1]);
+					emitRM("ST", AC, tmp_offset--, FP, "Store RHS");
+					emitRM("LD", AC1, ++tmp_offset, FP, "Load RHS");
+					emitRM("LD", AC, ++tmp_offset, FP, "Load LHS");
+					emitRO("TNE", AC, AC, AC1, "OP !=");
+					break;
+				case OP_QMARK:
+					traverse(node->child[0]);
+					emitRM("ST", AC, tmp_offset--, FP, "Store LHS");
+					emitRM("LD", AC, ++tmp_offset, FP, "Load LHS");
+					emitRO("RND", AC, AC, NONE, "UNARY OP ?");
+					break;
+				case OP_OR:
+					traverse(node->child[0]);
+					emitRM("ST", AC, tmp_offset--, FP, "Store LHS");
+					traverse(node->child[1]);
+					emitRM("ST", AC, tmp_offset--, FP, "Store RHS");
+					emitRM("LD", AC1, ++tmp_offset, FP, "Load RHS");
+					emitRM("LD", AC, ++tmp_offset, FP, "Load LHS");
+					emitRO("OR", AC, AC, AC1, "OP or");
+					break;
+				case OP_SIZE:
+					emitRM("LD", AC, node->child[0]->data.mem.loc + 1,
+						base_reg(node->child[0]), "UNARY OP *");
+					break;
 				case OP_SUB:
+					traverse(node->child[0]);
+					emitRM("ST", AC, tmp_offset--, FP, "Store LHS");
+					traverse(node->child[1]);
+					emitRM("ST", AC, tmp_offset--, FP, "Store RHS");
+					emitRM("LD", AC1, ++tmp_offset, FP, "Load RHS");
+					emitRM("LD", AC, ++tmp_offset, FP, "Load LHS");
 					emitRO("SUB", AC, AC, AC1, "OP -");
 					break;
+				case OP_SUBSC:
+					traverse(node->child[1]);
+					emitRM("LDC", AC1, node->child[0]->data.mem.loc, NONE,
+						"Load offset of array",
+						node->child[0]->data.name);
+					emitRO("SUB", AC1, AC1, AC, "Find offset of element");
+					emitRM("LDA", AC, 0, FP, "Copy FP to AC");
+					emitRO("ADD", AC1, AC1, AC, "Find address of element");
+					emitRM("LD", AC, 0, AC1, "OP [");
+					break;
+				// emitRM("ST", AC, tmp_offset--, FP, "Store RHS");
+				// emitRM("LD", AC, ++tmp_offset, FP, "Load RHS");
 			}
 
 			break;
