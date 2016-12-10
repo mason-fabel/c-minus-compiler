@@ -13,6 +13,7 @@
 extern int offset;
 
 static void traverse(ast_t* node);
+static int base_reg(ast_t* var);
 
 static int main_addr;
 static int tmp_offset;
@@ -49,10 +50,80 @@ void codegen(ast_t* tree, FILE* fout) {
 	return;
 }
 
+int base_reg(ast_t* var) {
+	int reg;
+
+	switch (var->data.mem.scope) {
+		case SCOPE_GLOBAL:
+		case SCOPE_STATIC:
+			reg = GP;
+			break;
+		case SCOPE_LOCAL:
+		case SCOPE_PARAM:
+			reg = FP;
+			break;
+	}
+
+	return reg;
+}
+
 void traverse(ast_t* node) {
 	if (node == NULL) return;
 
 	switch (node->type) {
+		case NODE_ASSIGN:
+			ast_t* var;
+
+			var = node->child[0];
+
+			switch (node->data.op) {
+				case OP_ASS:
+					traverse(node->child[1]);
+					break;
+				case OP_ADDASS:
+					traverse(node->child[1]);
+					emitRM("LD", AC1, var->data.mem.loc, base_reg(var),
+						"Load variable", var->data.name);
+					emitRO("ADD", AC, AC1, AC, "ADD for OP +=");
+					break;
+				case OP_DIVASS:
+					traverse(node->child[1]);
+					emitRM("LD", AC1, var->data.mem.loc, base_reg(var),
+						"Load variable", var->data.name);
+					emitRO("DIV", AC, AC1, AC, "DIV for OP /=");
+					break;
+				case OP_MULASS:
+					traverse(node->child[1]);
+					emitRM("LD", AC1, var->data.mem.loc, base_reg(var),
+						"Load variable", var->data.name);
+					emitRO("MUL", AC, AC1, AC, "MUL for OP *=");
+					break;
+				case OP_SUBASS:
+					traverse(node->child[1]);
+					emitRM("LD", AC1, var->data.mem.loc, base_reg(var),
+						"Load variable", var->data.name);
+					emitRO("SUB", AC, AC1, AC, "SUB for OP -=");
+					break;
+				case OP_INC:
+					emitRM("LD", AC, var->data.mem.loc, base_reg(var),
+						"Load variable", var->data.name);
+					emitRM("LDC", AC1, 1, NONE, "Load integer constant");
+					emitRO("ADD", AC, AC, AC1, "ADD for OP ++");
+					break;
+				case OP_DEC:
+					emitRM("LD", AC, var->data.mem.loc, base_reg(var),
+						"Load variable", var->data.name);
+					emitRM("LDC", AC1, 1, NONE, "Load integer constant");
+					emitRO("SUB", AC, AC, AC1, "SUB for OP --");
+					break;
+			}
+
+			emitRM("ST", AC, var->data.mem.loc, base_reg(var),
+				"Store variable", var->data.name);
+
+			break;
+
+
 		case NODE_CALL:
 			int i;
 			char* str;
@@ -112,20 +183,8 @@ void traverse(ast_t* node) {
 			break;
 
 		case NODE_ID:
-			switch (node->data.mem.scope) {
-				case SCOPE_GLOBAL:
-					emitRM("LD", AC, node->data.mem.loc, GP,
-						"Load variable", node->data.name);
-					break;
-				case SCOPE_LOCAL:
-				case SCOPE_PARAM:
-					emitRM("LD", AC, node->data.mem.loc, FP,
-						"Load variable", node->data.name);
-					break;
-				case SCOPE_STATIC:
-					emitComment("STATIC VAR NOT IMPLEMENTED:", node->data.name);
-					break;
-			}
+			emitRM("LD", AC, node->data.mem.loc, base_reg(node),
+				"Load variable", node->data.name);
 			break;
 
 		case NODE_IF:
@@ -276,6 +335,7 @@ void traverse(ast_t* node) {
 
 		case NODE_VAR:
 			if (node->data.mem.scope != SCOPE_LOCAL) break;
+			/* Initialize locals */
 			if (node->data.is_array) {
 				emitRM("LDC", AC, node->data.mem.size - 1, NONE,
 					"Load size of array", node->data.name);
