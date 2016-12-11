@@ -5,13 +5,16 @@
 #include <string>
 #include <string.h>
 #include "ast.h"
-#include "emit.h"
 #include "codegen.h"
+#include "emit.h"
+#include "symtab.h"
 
 #define PARAM_STR_LEN 10
 
 extern int offset;
+extern SymbolTable sem_symtab;
 
+static void global_init(std::string name, void* ptr);
 static void traverse(ast_t* node);
 static int base_reg(ast_t* var);
 
@@ -40,8 +43,11 @@ void codegen(ast_t* tree, FILE* fout) {
 	emitRM("LD", GP, 0, GP,  "Set GP");
 	emitRM("LDA", FP, offset, GP,  "Set first frame");
 	emitRM("ST", FP, 0, FP,  "Store old FP (point to self)");
+
 	emitComment("INIT GLOBALS");
+	sem_symtab.applyToAllGlobal(global_init);
 	emitComment("END INIT GLOBALS");
+
 	emitRM("LDA", AC, 1, PC, "Return address in AC");
 	if (main_addr > 0) emitRMAbs("LDA", PC, main_addr - 1, "Jump to main");
 	emitRO("HALT", 0, 0, 0, "DONE!");
@@ -67,27 +73,60 @@ int base_reg(ast_t* var) {
 	return reg;
 }
 
+static void global_init(std::string name, void* ptr) {
+	ast_t* node;
+
+	node = (ast_t*) ptr;
+
+	if (node->type != NODE_VAR) return;
+	if (node->data.mem.scope != SCOPE_GLOBAL) return;
+
+	if (node->data.is_array) {
+		emitRM("LDC", AC, node->data.mem.size - 1, NONE,
+			"Load size of array", node->data.name);
+		emitRM("ST", AC, node->data.mem.loc + 1, GP,
+			"Save size of array", node->data.name);
+	} else if (node->child[0]) {
+		traverse(node->child[0]);
+		emitRM("ST", AC, node->data.mem.loc, GP,
+			"Store variable", node->data.name);
+	}
+
+	return;
+}
+
 void traverse(ast_t* node) {
 	if (node == NULL) return;
 
 	switch (node->type) {
 		case NODE_ASSIGN:
+			emitComment("ASSIGN");
+
 			if (node->child[0]->type == NODE_ID) {
-				emitRM("LD", AC1, node->child[0]->data.mem.loc,
+				emitRM("LD", AC, node->child[0]->data.mem.loc,
 					base_reg(node->child[0]),
 					"Load variable", node->child[0]->data.name);
-				emitRM("ST", AC, tmp_offset--, FP, "Store value");
 			} else if (node->child[0]->type == NODE_OP) {
 				traverse(node->child[0]->child[1]);
-				emitRM("LDC", AC1, node->child[0]->child[0]->data.mem.loc, NONE,
-					"Load offset of array",
-					node->child[0]->child[0]->data.name);
-				emitRO("SUB", AC1, AC1, AC, "Find offset of element");
-				emitRM("LDA", AC, 0, FP, "Copy FP to AC");
-				emitRO("ADD", AC1, AC1, AC, "Find address of element");
-				emitRM("LDA", AC, 0, AC1, "OP [");
-				emitRM("ST", AC, tmp_offset--, FP, "Store value");
+				if (node->child[0]->child[0]->data.mem.scope == SCOPE_PARAM) {
+					emitRM("LD", AC1, node->child[0]->child[0]->data.mem.loc,
+						FP, "Load address of array",
+						node->child[0]->child[0]->data.name);
+					emitRO("SUB", AC1, AC1, AC, "Find address of element");
+					emitRM("LD", AC, 0, AC1, "OP [");
+				} else {
+					emitRM("LDC", AC1, node->child[0]->child[0]->data.mem.loc,
+						NONE, "Load offset of array",
+						node->child[0]->child[0]->data.name);
+					emitRO("SUB", AC1, AC1, AC, "Find offset of element");
+					emitRM("LDA", AC, 0, base_reg(node->child[0]->child[0]),
+						"Find address of array",
+						node->child[0]->child[0]->data.name);
+					emitRO("ADD", AC1, AC1, AC, "Find address of element");
+					emitRM("LD", AC, 0, AC1, "OP [");
+				}
 			}
+			emitRM("ST", AC, tmp_offset--, FP, "Store value");
 
 			switch (node->data.op) {
 				case OP_ASS:
@@ -133,18 +172,32 @@ void traverse(ast_t* node) {
 			} else if (node->child[0]->type == NODE_OP) {
 				emitRM("ST", AC, tmp_offset--, FP, "Store RHS");
 				traverse(node->child[0]->child[1]);
-				emitRM("LDC", AC1, node->child[0]->child[0]->data.mem.loc, NONE,
-					"Load offset of array",
-					node->child[0]->child[0]->data.name);
-				emitRO("SUB", AC1, AC1, AC, "Find offset of element");
-				emitRM("LDA", AC, 0, FP, "Copy FP to AC");
-				emitRO("ADD", AC1, AC1, AC, "Find address of element");
-				emitRM("LD", AC, ++tmp_offset, FP, "Load RHS");
-				emitRM("ST", AC, 0, AC1,
-					"Store element in array",
-					node->child[0]->child[0]->data.name);
+				if (node->child[0]->child[0]->data.mem.scope == SCOPE_PARAM) {
+					emitRM("LD", AC1, node->child[0]->child[0]->data.mem.loc,
+						FP, "Load address of array",
+						node->child[0]->child[0]->data.name);
+					emitRO("SUB", AC1, AC1, AC, "Find address of element");
+					emitRM("LD", AC, ++tmp_offset, FP, "Load RHS");
+					emitRM("ST", AC, 0, AC1,
+						"Store element in array",
+						node->child[0]->child[0]->data.name);
+				} else {
+					emitRM("LDC", AC1, node->child[0]->child[0]->data.mem.loc,
+						NONE, "Load offset of array",
+						node->child[0]->child[0]->data.name);
+					emitRO("SUB", AC1, AC1, AC, "Find offset of element");
+					emitRM("LDA", AC, 0, base_reg(node->child[0]->child[0]),
+						"Find address of array",
+						node->child[0]->child[0]->data.name);
+					emitRO("ADD", AC1, AC1, AC, "Find address of element");
+					emitRM("LD", AC, ++tmp_offset, FP, "Load RHS");
+					emitRM("ST", AC, 0, AC1,
+						"Store element in array",
+						node->child[0]->child[0]->data.name);
+				}
 			}
 
+			emitComment("END ASSIGN");
 			break;
 
 
@@ -208,12 +261,13 @@ void traverse(ast_t* node) {
 
 		case NODE_ID:
 			if (node->data.is_array) {
-				emitRM("HALT", NONE, NONE, NONE,
-					"NODE_ID.is_array not implemented");
+				emitRM("LDA", AC, node->data.mem.loc, base_reg(node),
+					"Load address of array", node->data.name);
 			} else {
 				emitRM("LD", AC, node->data.mem.loc, base_reg(node),
 					"Load variable", node->data.name);
 			}
+			goto no_sibling;
 			break;
 
 		case NODE_IF:
@@ -457,8 +511,17 @@ void traverse(ast_t* node) {
 					emitRO("OR", AC, AC, AC1, "OP or");
 					break;
 				case OP_SIZE:
-					emitRM("LD", AC, node->child[0]->data.mem.loc + 1,
-						base_reg(node->child[0]), "UNARY OP *");
+					if (node->child[0]->data.mem.scope == SCOPE_PARAM) {
+						emitRM("LD", AC, node->child[0]->data.mem.loc, FP,
+							"Load address of array",
+							node->child[0]->data.name);
+						emitRM("LDC", AC1, 1, NONE, "Load integer constant");
+						emitRO("ADD", AC, AC, AC1, "Find address of size");
+						emitRM("LD", AC, 0, AC, "UNARY OP *");
+					} else {
+						emitRM("LD", AC, node->child[0]->data.mem.loc + 1,
+							base_reg(node->child[0]), "UNARY OP *");
+					}
 					break;
 				case OP_SUB:
 					traverse(node->child[0]);
@@ -471,16 +534,23 @@ void traverse(ast_t* node) {
 					break;
 				case OP_SUBSC:
 					traverse(node->child[1]);
-					emitRM("LDC", AC1, node->child[0]->data.mem.loc, NONE,
-						"Load offset of array",
-						node->child[0]->data.name);
-					emitRO("SUB", AC1, AC1, AC, "Find offset of element");
-					emitRM("LDA", AC, 0, FP, "Copy FP to AC");
-					emitRO("ADD", AC1, AC1, AC, "Find address of element");
-					emitRM("LD", AC, 0, AC1, "OP [");
+					if (node->child[0]->data.mem.scope == SCOPE_PARAM) {
+						emitRM("LD", AC1, node->child[0]->data.mem.loc, FP,
+							"Load address of array",
+							node->child[0]->data.name);
+						emitRO("SUB", AC1, AC1, AC, "Find address of element");
+						emitRM("LD", AC, 0, AC1, "OP [");
+					} else {
+						emitRM("LDC", AC1, node->child[0]->data.mem.loc, NONE,
+							"Load offset of array",
+							node->child[0]->data.name);
+						emitRO("SUB", AC1, AC1, AC, "Find offset of element");
+						emitRM("LDA", AC, 0, base_reg(node->child[0]),
+							"Find address of array", node->child[0]->data.name);
+						emitRO("ADD", AC1, AC1, AC, "Find address of element");
+						emitRM("LD", AC, 0, AC1, "OP [");
+					}
 					break;
-				// emitRM("ST", AC, tmp_offset--, FP, "Store RHS");
-				// emitRM("LD", AC, ++tmp_offset, FP, "Load RHS");
 			}
 
 			break;
@@ -514,5 +584,6 @@ void traverse(ast_t* node) {
 
 	traverse(node->sibling);
 
+	no_sibling:
 	return;
 }
