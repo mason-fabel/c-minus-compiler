@@ -127,6 +127,7 @@ void traverse(ast_t* node, bool sibling) {
 					emitRM("LD", AC, 0, AC1, "OP [");
 				}
 			}
+			emitRM("ST", AC1, tmp_offset--, FP, "Store address");
 			emitRM("ST", AC, tmp_offset--, FP, "Store value");
 
 			switch (node->data.op) {
@@ -167,35 +168,17 @@ void traverse(ast_t* node, bool sibling) {
 			}
 
 			if (node->child[0]->type == NODE_ID) {
+				++tmp_offset; // pop address
 				emitRM("ST", AC, node->child[0]->data.mem.loc,
 					base_reg(node->child[0]),
 					"Store variable", node->child[0]->data.name);
 			} else if (node->child[0]->type == NODE_OP) {
 				emitRM("ST", AC, tmp_offset--, FP, "Store RHS");
-				traverse(node->child[0]->child[1]);
-				if (node->child[0]->child[0]->data.mem.scope == SCOPE_PARAM) {
-					emitRM("LD", AC1, node->child[0]->child[0]->data.mem.loc,
-						FP, "Load address of array",
-						node->child[0]->child[0]->data.name);
-					emitRO("SUB", AC1, AC1, AC, "Find address of element");
-					emitRM("LD", AC, ++tmp_offset, FP, "Load RHS");
-					emitRM("ST", AC, 0, AC1,
-						"Store element in array",
-						node->child[0]->child[0]->data.name);
-				} else {
-					emitRM("LDC", AC1, node->child[0]->child[0]->data.mem.loc,
-						NONE, "Load offset of array",
-						node->child[0]->child[0]->data.name);
-					emitRO("SUB", AC1, AC1, AC, "Find offset of element");
-					emitRM("LDA", AC, 0, base_reg(node->child[0]->child[0]),
-						"Find base address of array",
-						node->child[0]->child[0]->data.name);
-					emitRO("ADD", AC1, AC1, AC, "Find address of element");
-					emitRM("LD", AC, ++tmp_offset, FP, "Load RHS");
-					emitRM("ST", AC, 0, AC1,
-						"Store element in array",
-						node->child[0]->child[0]->data.name);
-				}
+				emitRM("LD", AC, ++tmp_offset, FP, "Load RHS");
+				emitRM("LD", AC1, ++tmp_offset, FP, "Load address");
+				emitRM("ST", AC, 0, AC1,
+					"Store element in array",
+					node->child[0]->child[0]->data.name);
 			}
 
 			emitComment("END ASSIGN");
@@ -591,6 +574,25 @@ void traverse(ast_t* node, bool sibling) {
 				emitRM("ST", AC, node->data.mem.loc, FP,
 					"Store variable", node->data.name);
 			}
+			break;
+
+		case NODE_WHILE:
+			int end_addr;
+			int loop_addr;
+
+			emitComment("WHILE");
+			loop_addr = emitSkip(0);
+			traverse(node->child[0]);
+			emitRM("JNZ", AC, 1, PC, "Jump to DO");
+
+			end_addr = emitSkip(1);
+
+			emitComment("DO");
+			traverse(node->child[1]);
+			emitRMAbs("LDA", PC, loop_addr, "Go to WHILE");
+			backPatchAJumpToHere(end_addr, "Jump past WHILE [BACKPATCH]");
+			emitComment("END WHILE");
+
 			break;
 	}
 
