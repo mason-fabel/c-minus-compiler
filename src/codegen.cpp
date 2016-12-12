@@ -470,10 +470,9 @@ void traverse(ast_t* node, bool sibling) {
 					emitRM("ST", AC, tmp_offset--, FP, "Store RHS");
 					emitRM("LD", AC1, ++tmp_offset, FP, "Load RHS");
 					emitRM("LD", AC, ++tmp_offset, FP, "Load LHS");
-					emitRO("TLT", AC2, AC, AC1, "OP % CHECK");
-					emitRM("JNZ", AC2, 2, PC, "Jump past OP % if true");
-					emitRO("SUB", AC, AC, AC1, "SUB RHS from LHS");
-					emitRM("LDA", PC, -4, PC, "Loop to CHECK");
+					emitRO("DIV", AC2, AC, AC1, "OP %");
+					emitRO("MUL", AC2, AC2, AC1, "OP %");
+					emitRO("SUB", AC, AC, AC2, "OP%");
 					break;
 				case OP_MUL:
 					traverse(node->child[0]);
