@@ -277,9 +277,12 @@ void traverse(ast_t* node, bool sibling) {
 			break;
 
 		case NODE_IF:
+			int has_else;
 			int jump_addr;
 			int then_addr;
 			int else_addr;
+
+			has_else = node->child[2] ? 1 : 0;
 
 			emitComment("IF");
 			traverse(node->child[0]);
@@ -287,12 +290,15 @@ void traverse(ast_t* node, bool sibling) {
 			emitComment("THEN");
 			then_addr = emitSkip(1);
 			traverse(node->child[1]);
-			jump_addr = emitSkip(1);
+
+			if (has_else) jump_addr = emitSkip(1);
+
 			backPatchAJumpToHere("JZR", AC, then_addr,
 				"Jump past THEN if false [BACKPATCH]");
-			emitBackup(jump_addr);
 
-			if (node->child[2]) {
+
+			if (has_else) {
+				emitBackup(jump_addr);
 				emitComment("ELSE");
 				else_addr = emitSkip(1);
 				traverse(node->child[2]);
