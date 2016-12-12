@@ -10,12 +10,13 @@
 #include "symtab.h"
 
 #define PARAM_STR_LEN 10
+#define NO_SIBLING false
 
 extern int offset;
 extern SymbolTable sem_symtab;
 
 static void global_init(std::string name, void* ptr);
-static void traverse(ast_t* node);
+static void traverse(ast_t* node, bool sibling = true);
 static int base_reg(ast_t* var);
 
 static int main_addr;
@@ -95,7 +96,7 @@ static void global_init(std::string name, void* ptr) {
 	return;
 }
 
-void traverse(ast_t* node) {
+void traverse(ast_t* node, bool sibling) {
 	if (node == NULL) return;
 
 	switch (node->type) {
@@ -120,7 +121,7 @@ void traverse(ast_t* node) {
 						node->child[0]->child[0]->data.name);
 					emitRO("SUB", AC1, AC1, AC, "Find offset of element");
 					emitRM("LDA", AC, 0, base_reg(node->child[0]->child[0]),
-						"Find address of array",
+						"Find base address of array",
 						node->child[0]->child[0]->data.name);
 					emitRO("ADD", AC1, AC1, AC, "Find address of element");
 					emitRM("LD", AC, 0, AC1, "OP [");
@@ -187,7 +188,7 @@ void traverse(ast_t* node) {
 						node->child[0]->child[0]->data.name);
 					emitRO("SUB", AC1, AC1, AC, "Find offset of element");
 					emitRM("LDA", AC, 0, base_reg(node->child[0]->child[0]),
-						"Find address of array",
+						"Find base address of array",
 						node->child[0]->child[0]->data.name);
 					emitRO("ADD", AC1, AC1, AC, "Find address of element");
 					emitRM("LD", AC, ++tmp_offset, FP, "Load RHS");
@@ -216,7 +217,7 @@ void traverse(ast_t* node) {
 				str = (char*) malloc(sizeof(char) * PARAM_STR_LEN);
 				sprintf(str, "%i", ++i);
 				emitComment("LOAD PARAM", str);
-				traverse(param);
+				traverse(param, NO_SIBLING);
 				emitRM("ST", AC, tmp_offset--, FP,
 					"Store parameter");
 			}
@@ -261,8 +262,13 @@ void traverse(ast_t* node) {
 
 		case NODE_ID:
 			if (node->data.is_array) {
-				emitRM("LDA", AC, node->data.mem.loc, base_reg(node),
-					"Load address of array", node->data.name);
+				if (node->data.mem.scope == SCOPE_PARAM) {
+					emitRM("LD", AC, node->data.mem.loc, base_reg(node),
+						"Load address of array", node->data.name);
+				} else {
+					emitRM("LDA", AC, node->data.mem.loc, base_reg(node),
+						"Load address of array", node->data.name);
+				}
 			} else {
 				emitRM("LD", AC, node->data.mem.loc, base_reg(node),
 					"Load variable", node->data.name);
@@ -546,7 +552,8 @@ void traverse(ast_t* node) {
 							node->child[0]->data.name);
 						emitRO("SUB", AC1, AC1, AC, "Find offset of element");
 						emitRM("LDA", AC, 0, base_reg(node->child[0]),
-							"Find address of array", node->child[0]->data.name);
+							"Find base address of array",
+							node->child[0]->data.name);
 						emitRO("ADD", AC1, AC1, AC, "Find address of element");
 						emitRM("LD", AC, 0, AC1, "OP [");
 					}
@@ -582,7 +589,7 @@ void traverse(ast_t* node) {
 			break;
 	}
 
-	traverse(node->sibling);
+	if (sibling) traverse(node->sibling);
 
 	no_sibling:
 	return;
