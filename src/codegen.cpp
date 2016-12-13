@@ -260,7 +260,6 @@ void traverse(ast_t* node, bool sibling) {
 				emitRM("LD", AC, node->data.mem.loc, base_reg(node),
 					"Load variable", node->data.name);
 			}
-			goto no_sibling;
 			break;
 
 		case NODE_IF:
@@ -615,6 +614,5 @@ void traverse(ast_t* node, bool sibling) {
 
 	if (sibling) traverse(node->sibling);
 
-	no_sibling:
 	return;
 }
