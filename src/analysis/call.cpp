@@ -52,8 +52,8 @@ int call_params(ast_t* call, ast_t* def) {
 
 		switch (err_type) {
 			case ERR_ARGS_MORE:
-			case ERR_TYPE:
 				param_error(err);
+				goto end_check;
 				break;
 			case ERR_ARGS_LESS:
 				param_error(err);
@@ -63,7 +63,10 @@ int call_params(ast_t* call, ast_t* def) {
 				 * definition, we don't care to continue. Bail out of the param
 				 * loop.
 				 */
-				def_param = NULL;
+				goto end_check;
+				break;
+			case ERR_TYPE:
+				param_error(err);
 				break;
 		}
 
@@ -72,6 +75,7 @@ int call_params(ast_t* call, ast_t* def) {
 		if (def_param) def_param = def_param->sibling;
 	}
 
+	end_check:
 	return pass;
 }
 
