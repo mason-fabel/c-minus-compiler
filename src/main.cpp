@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "ast.h"
+#include "codegen.h"
 #include "flags.h"
 #include "getopt.h"
 #include "print_tree.h"
@@ -10,6 +12,7 @@
 
 #define FALSE 0
 #define TRUE 1
+#define FNAME_LEN 100
 
 extern void scanner_use_file(char* fname);
 extern int yyparse(void);
@@ -24,7 +27,12 @@ int offset;
 int warnings;
 flags_t flags;
 
+static char* finput;
+static char* fname;
+static FILE* fout;
+
 int main(int argc, char** argv) {
+	int end;
 	char c;
 
 	/* Set default values */
@@ -32,6 +40,7 @@ int main(int argc, char** argv) {
 	flags.symtab_debug = 0;
 	flags.print_ast = 0;
 	flags.print_aug_ast = 0;
+	finput = (char*) "";
 	errors = 0;
 	offset = 0;
 	warnings = 0;
@@ -70,7 +79,8 @@ int main(int argc, char** argv) {
 	/* Find input source */
 	switch (argc - optind) {
 		case 1:
-			scanner_use_file(argv[optind]);
+			finput = argv[optind];
+			scanner_use_file(finput);
 			break;
 		case 0:
 			/* read from STDIN */
@@ -87,9 +97,37 @@ int main(int argc, char** argv) {
 
 	syntax_tree = sem_analysis(syntax_tree);
 
-	if (flags.print_aug_ast) ast_print(syntax_tree, TRUE);
+	if (flags.print_aug_ast) {
+		ast_print(syntax_tree, TRUE);
+		fprintf(stdout, "Offset for end of global space: %i\n", offset);
+	}
+	if (errors) goto end;
 
-	fprintf(stdout, "Offset for end of global space: %i\n", offset);
+	if (strcmp(finput, "")) {
+		for (end = strlen(finput); end >= 0; end--) {
+			if (finput[end] == '.') break;
+		}
+		if (end > 0) finput[end] = '\0';
+
+		for (end = strlen(finput); end >= 0; end--) {
+			if (finput[end] == '/') break;
+		}
+		if (end > 0) finput = finput + end + 1;
+
+		fname = (char*) malloc(sizeof(char) * FNAME_LEN);
+		sprintf(fname, "%s.tm", finput);
+	} else {
+		fname = (char*) "out.tm";
+	}
+	fout = fopen(fname, "w");
+	if (fout == NULL) {
+		fprintf(stdout, "ERROR(OUTPUT): output file \"%s\" ", fname);
+		fprintf(stdout, "could not be opened.\n");
+		goto end;
+	}
+	codegen(syntax_tree, fout);
+	fclose(fout);
+
 	end:
 	fprintf(stdout, "Number of warnings: %i\n", warnings);
 	fprintf(stdout, "Number of errors: %i\n", errors);
