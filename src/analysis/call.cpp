@@ -7,6 +7,7 @@
 typedef enum {
 	ERR_ARGS_LESS,
 	ERR_ARGS_MORE,
+	ERR_ARRAY,
 	ERR_NONE,
 	ERR_TYPE,
 } param_error_type_t;
@@ -65,6 +66,7 @@ int call_params(ast_t* call, ast_t* def) {
 				 */
 				goto end_check;
 				break;
+			case ERR_ARRAY:
 			case ERR_TYPE:
 				param_error(err);
 				break;
@@ -86,6 +88,7 @@ param_error_type_t param_check(ast_t* lhs, ast_t* rhs) {
 		if (lhs->data.type != rhs->data.type) return ERR_TYPE;
 		if (lhs->data.is_array != rhs->data.is_array) return ERR_TYPE;
 	}
+	if (lhs->data.is_array != rhs->data.is_array) return ERR_ARRAY;
 	return ERR_NONE;
 }
 
@@ -113,7 +116,7 @@ void param_error(param_error_dat_t err) {
 					err.def->lineno,
 					ast_type_string(err.call_param->data.type));
 			}
-
+		case ERR_ARRAY:
 			if (err.call_param->data.is_array != err.def_param->data.is_array) {
 				error_lineno(err.call);
 
@@ -127,7 +130,6 @@ void param_error(param_error_dat_t err) {
 					err.index, err.call->data.name);
 				fprintf(stdout, "defined on line %i.\n", err.def->lineno);
 			}
-
 			break;
 	}
 
