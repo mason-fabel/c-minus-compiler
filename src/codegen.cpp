@@ -22,6 +22,7 @@ static int base_reg(ast_t* var);
 static int main_addr;
 static int tmp_offset;
 static std::map<std::string, int> func_addr;
+static std::stack<std::vector<int>* > break_addrs;
 static ast_t* curr_func;
 
 void codegen(ast_t* tree, FILE* fout) {
@@ -184,6 +185,9 @@ void traverse(ast_t* node, bool sibling) {
 			emitComment("END ASSIGN");
 			break;
 
+		case NODE_BREAK:
+			break_addrs.top()->push_back(emitSkip(1));
+			break;
 
 		case NODE_CALL:
 			int i;
@@ -579,6 +583,9 @@ void traverse(ast_t* node, bool sibling) {
 		case NODE_WHILE:
 			int end_addr;
 			int loop_addr;
+			std::vector<int>::iterator break_addr;
+
+			break_addrs.push(new std::vector<int>());
 
 			emitComment("WHILE");
 			loop_addr = emitSkip(0);
@@ -591,7 +598,17 @@ void traverse(ast_t* node, bool sibling) {
 			traverse(node->child[1]);
 			emitRMAbs("LDA", PC, loop_addr, "Go to WHILE");
 			backPatchAJumpToHere(end_addr, "Jump past WHILE [BACKPATCH]");
+
+			break_addr = break_addrs.top()->begin();
+			while (break_addr != break_addrs.top()->end()) {
+				backPatchAJumpToHere(*break_addr,
+					"BREAK out of WHILE [BACKPATCH]");
+				break_addr++;
+			}
+
 			emitComment("END WHILE");
+
+			break_addrs.pop();
 
 			break;
 	}
